@@ -1,0 +1,53 @@
+@model ParcelamentoVM
+@{ ViewData["Title"] = "Parcelamento"; }
+
+<h2 class="mb-3">Gerar Compra Parcelada</h2>
+<p class="text-muted">Cada parcela vira uma conta individual vinculada à compra de origem.</p>
+
+<form asp-action="Parcelar" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label asp-for="Descricao" class="form-label"></label>
+            <input asp-for="Descricao" class="form-control" />
+            <span asp-validation-for="Descricao" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ValorTotal" class="form-label"></label>
+            <input asp-for="ValorTotal" class="form-control" type="number" step="0.01" />
+            <span asp-validation-for="ValorTotal" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="FornecedorId" class="form-label"></label>
+            <select asp-for="FornecedorId" class="form-select" asp-items="ViewBag.Fornecedores"><option value="">selecione...</option></select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="CategoriaId" class="form-label"></label>
+            <select asp-for="CategoriaId" class="form-select" asp-items="ViewBag.Categorias"><option value="">selecione...</option></select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="CentroCustoId" class="form-label"></label>
+            <select asp-for="CentroCustoId" class="form-select" asp-items="ViewBag.Centros"><option value="">selecione...</option></select>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Parcelas" class="form-label"></label>
+            <input asp-for="Parcelas" class="form-control" type="number" min="2" max="360" />
+            <span asp-validation-for="Parcelas" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="PrimeiroVencimento" class="form-label"></label>
+            <input asp-for="PrimeiroVencimento" class="form-control" type="date" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="FormaPagamento" class="form-label"></label>
+            <select asp-for="FormaPagamento" class="form-select" asp-items="Html.GetEnumSelectList<FormaPagamento>()"></select>
+        </div>
+    </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Gerar Parcelas</button>
+        <a class="btn btn-link" asp-action="Index">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,64 @@
+@model ContaReceber
+@{
+    ViewData["Title"] = "Receber " + Model.Id;
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+    bool podeReceber = Model.Status is StatusReceber.Aberta or StatusReceber.ParcialmenteRecebida or StatusReceber.Vencida;
+}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2 class="mb-1">@Model.Descricao</h2>
+        <span class="badge @UiHelpers.BadgeReceber(Model.Status) fs-6">@Model.Status</span>
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="Index">← Voltar</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card mb-3"><div class="card-header">Dados</div><div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">@Model.Cliente?.RazaoSocial</dd>
+                <dt class="col-sm-4">Emissão</dt><dd class="col-sm-8">@Model.DataEmissao.ToShortDateString()</dd>
+                <dt class="col-sm-4">Vencimento</dt><dd class="col-sm-8">@Model.DataVencimento.ToShortDateString()</dd>
+                <dt class="col-sm-4">Forma</dt><dd class="col-sm-8">@Model.FormaRecebimento</dd>
+                @if (!string.IsNullOrEmpty(Model.Observacao)) { <dt class="col-sm-4">Observação</dt><dd class="col-sm-8">@Model.Observacao</dd> }
+            </dl>
+        </div></div>
+
+        @if (Model.Recebimentos.Any())
+        {
+            <div class="card"><div class="card-header">Recebimentos</div>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Data</th><th class="text-end">Valor</th><th>Conta</th><th>Forma</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model.Recebimentos)
+                        { <tr><td>@r.DataRecebimento.ToShortDateString()</td><td class="text-end">@Moeda(r.ValorRecebido)</td><td>@r.ContaBancaria?.Nome</td><td>@r.FormaRecebimento</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="col-md-5">
+        <div class="card mb-3"><div class="card-header">Valores</div><div class="card-body">
+            <table class="table table-sm mb-0">
+                <tr><td>Valor</td><td class="text-end fw-bold">@Moeda(Model.Valor)</td></tr>
+                <tr><td>Recebido</td><td class="text-end">@Moeda(Model.ValorRecebido)</td></tr>
+                <tr><td>Saldo a receber</td><td class="text-end">@Moeda(Model.SaldoAReceber)</td></tr>
+            </table>
+        </div></div>
+        <div class="card"><div class="card-header">Ações</div><div class="card-body d-grid gap-2">
+            @if (podeReceber)
+            {
+                <a class="btn btn-success" asp-action="Receber" asp-route-id="@Model.Id">Registrar Recebimento</a>
+            }
+            @if (Model.Status != StatusReceber.Recebida && Model.Status != StatusReceber.Cancelada)
+            {
+                <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Cancelar?');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-danger w-100">Cancelar</button>
+                </form>
+            }
+        </div></div>
+    </div>
+</div>

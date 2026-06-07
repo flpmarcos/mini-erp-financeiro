@@ -1,0 +1,29 @@
+@{ ViewData["Title"] = "Relatórios"; }
+
+<h2 class="mb-3">Relatórios Financeiros</h2>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card"><div class="card-header">Por Conta</div>
+            <div class="list-group list-group-flush">
+                <a class="list-group-item list-group-item-action" asp-action="Vencidas">Contas Vencidas</a>
+                <a class="list-group-item list-group-item-action" asp-action="AVencer">A Vencer (próximos 7 dias)</a>
+                <a class="list-group-item list-group-item-action" asp-action="PagasNoMes">Pagas no Mês</a>
+                <a class="list-group-item list-group-item-action" asp-action="Pendentes">Pendentes</a>
+                <a class="list-group-item list-group-item-action" asp-action="ParcialmentePagas">Parcialmente Pagas</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card"><div class="card-header">Agregados / Gráficos</div>
+            <div class="list-group list-group-flush">
+                <a class="list-group-item list-group-item-action" asp-action="FluxoCaixa">Fluxo de Caixa Previsto</a>
+                <a class="list-group-item list-group-item-action" asp-action="PorFornecedor">Despesas por Fornecedor</a>
+                <a class="list-group-item list-group-item-action" asp-action="PorCentroCusto">Despesas por Centro de Custo</a>
+                <a class="list-group-item list-group-item-action" asp-action="PorCategoria">Despesas por Categoria</a>
+                <a class="list-group-item list-group-item-action" asp-action="Impostos">Impostos Retidos</a>
+                <a class="list-group-item list-group-item-action" asp-action="PorBanco">Pagamentos por Banco</a>
+            </div>
+        </div>
+    </div>
+</div>

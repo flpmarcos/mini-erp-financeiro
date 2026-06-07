@@ -1,0 +1,75 @@
+@model LoginVM
+@{
+    ViewData["Title"] = "Entrar";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Entrar · FinFlow</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { display: grid; place-items: center; min-height: 100vh;
+               background: radial-gradient(120% 120% at 0% 0%, #1e293b 0%, #0f172a 55%); }
+        .login-card { width: 100%; max-width: 400px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="text-center mb-4 text-white">
+            <div class="d-inline-grid mb-2" style="width:56px;height:56px;border-radius:16px;place-items:center;background:linear-gradient(135deg,#4f46e5,#f59e0b)">
+                <svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
+                    <path d="M11 31 C18 31 19 19 26 19 C31 19 32 25 37 25" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+                    <path d="M33 22.5 L37 25 L34.5 29" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="13" cy="17" r="3.4" fill="#fff"/>
+                </svg>
+            </div>
+            <h1 class="h4 mb-0" style="color:#fff">FinFlow</h1>
+            <div style="color:#94a3b8;font-size:.85rem">Mini-ERP Financeiro</div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-3">Entrar</h2>
+                <form asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+                    <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">E-mail</label>
+                        <input asp-for="Email" class="form-control" autofocus placeholder="financeiro@demo.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Senha" class="form-label">Senha</label>
+                        <input asp-for="Senha" type="password" class="form-control" placeholder="Senha123!" />
+                    </div>
+                    <div class="form-check mb-3">
+                        <input asp-for="Lembrar" class="form-check-input" />
+                        <label asp-for="Lembrar" class="form-check-label small">Manter conectado</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3"><div class="card-body p-3">
+            <div class="small text-muted mb-2">Usuários de teste (senha <code>Senha123!</code>):</div>
+            <ul class="small mb-0 ps-3">
+                <li><strong>admin@demo.com</strong> — acesso total</li>
+                <li><strong>financeiro@demo.com</strong> — cadastra/paga</li>
+                <li><strong>gerente@demo.com</strong> — aprova até R$ 10.000</li>
+                <li><strong>diretor@demo.com</strong> — aprova alto valor</li>
+                <li><strong>auditor@demo.com</strong> — só visualiza</li>
+            </ul>
+        </div></div>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

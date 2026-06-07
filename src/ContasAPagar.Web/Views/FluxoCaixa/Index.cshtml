@@ -1,0 +1,64 @@
+@model FluxoCaixaVM
+@{
+    ViewData["Title"] = "Fluxo de Caixa";
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<h2 class="mb-4">Fluxo de Caixa Projetado</h2>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="kpi @(Model.SaldoAtual >= 0 ? "kpi--primary" : "kpi--danger")">
+            <div class="kpi__label">Saldo Atual</div>
+            <div class="kpi__value">@Moeda(Model.SaldoAtual)</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi kpi--success"><div class="kpi__label">Recebido (realizado)</div><div class="kpi__value">@Moeda(Model.TotalRecebidoRealizado)</div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi kpi--warning"><div class="kpi__label">Pago (realizado)</div><div class="kpi__value">@Moeda(Model.TotalPagoRealizado)</div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    @foreach (var h in Model.Horizontes)
+    {
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">Projeção @h.Dias dias</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr><td>Entradas previstas</td><td class="text-end text-success">@Moeda(h.EntradasPrevistas)</td></tr>
+                        <tr><td>Saídas previstas</td><td class="text-end text-danger">@Moeda(h.SaidasPrevistas)</td></tr>
+                        <tr><td>Resultado</td><td class="text-end">@Moeda(h.ResultadoPrevisto)</td></tr>
+                        <tr class="table-light"><td class="fw-bold">Saldo projetado</td>
+                            <td class="text-end fw-bold @(h.SaldoProjetado < 0 ? "text-danger" : "")">@Moeda(h.SaldoProjetado)</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="card"><div class="card-header">Saldo projetado por horizonte</div>
+    <div class="card-body"><canvas id="chartFluxo" height="90"></canvas></div>
+</div>
+
+@section Scripts {
+    <script>
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Horizontes.Select(h => h.Dias + " dias")));
+        const saldo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Horizontes.Select(h => h.SaldoProjetado)));
+        const entradas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Horizontes.Select(h => h.EntradasPrevistas)));
+        const saidas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Horizontes.Select(h => h.SaidasPrevistas)));
+        new Chart(document.getElementById('chartFluxo'), {
+            type: 'bar',
+            data: { labels, datasets: [
+                { label: 'Entradas', data: entradas, backgroundColor: '#059669', borderRadius: 6 },
+                { label: 'Saídas', data: saidas, backgroundColor: '#dc2626', borderRadius: 6 },
+                { label: 'Saldo projetado', type: 'line', data: saldo, borderColor: '#4f46e5', backgroundColor: '#4f46e5', tension: .3 }
+            ]},
+            options: { scales: { y: { grid: { color: '#eef1f6' } }, x: { grid: { display: false } } } }
+        });
+    </script>
+}

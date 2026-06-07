@@ -1,0 +1,26 @@
+## Build
+bin/
+obj/
+*.user
+
+## IDE
+.vs/
+.idea/
+*.suo
+
+## Runtime / dados locais
+logs/
+uploads/
+*.db
+
+## Segredos locais (nunca commitar)
+appsettings.*.local.json
+**/appsettings.Local.json
+.env
+
+## Testes / ferramentas
+.playwright-mcp/
+TestResults/
+[Tt]est[Rr]esults/
+*.trx
+coverage*/

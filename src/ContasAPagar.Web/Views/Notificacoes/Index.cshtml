@@ -1,0 +1,38 @@
+@model List<Notificacao>
+@{ ViewData["Title"] = "Notificações"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Notificações</h2>
+    <form asp-action="MarcarTodas" method="post">
+        @Html.AntiForgeryToken()
+        <button class="btn btn-outline-secondary btn-sm">Marcar todas como lidas</button>
+    </form>
+</div>
+
+<div class="card">
+    <ul class="list-group list-group-flush">
+        @foreach (var n in Model)
+        {
+            var border = n.Severidade == SeveridadeNotificacao.Alerta ? "border-danger"
+                       : n.Severidade == SeveridadeNotificacao.Sucesso ? "border-success" : "border-primary";
+            <li class="list-group-item d-flex justify-content-between align-items-start @(n.Lida ? "" : "bg-light")">
+                <div style="border-left:3px solid; padding-left:.6rem" class="@border">
+                    <div class="@(n.Lida ? "" : "fw-semibold")">@n.Titulo</div>
+                    @if (!string.IsNullOrEmpty(n.Mensagem)) { <div class="small text-muted">@n.Mensagem</div> }
+                    <div class="small text-muted">@n.CriadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · para @n.Destinatario</div>
+                </div>
+                <div class="d-flex gap-2">
+                    @if (!string.IsNullOrEmpty(n.Link)) { <a class="btn btn-sm btn-outline-primary" href="@n.Link">Abrir</a> }
+                    @if (!n.Lida)
+                    {
+                        <form asp-action="MarcarLida" asp-route-id="@n.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-secondary">Lida</button>
+                        </form>
+                    }
+                </div>
+            </li>
+        }
+        @if (!Model.Any()) { <li class="list-group-item text-muted text-center py-4">Nenhuma notificação.</li> }
+    </ul>
+</div>

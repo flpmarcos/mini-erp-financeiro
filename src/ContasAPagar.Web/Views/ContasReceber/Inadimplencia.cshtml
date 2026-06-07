@@ -1,0 +1,32 @@
+@model List<ContaReceber>
+@{
+    ViewData["Title"] = "Inadimplência";
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between mb-3">
+    <h2>Inadimplência</h2>
+    <a class="btn btn-outline-secondary" asp-action="Index">← Contas a Receber</a>
+</div>
+
+<table class="table table-sm bg-white align-middle">
+    <thead class="table-light"><tr><th>Descrição</th><th>Cliente</th><th>Vencimento</th><th class="text-end">Saldo</th><th>Dias</th></tr></thead>
+    <tbody>
+        @foreach (var c in Model)
+        {
+            var dias = (DateTime.Today - c.DataVencimento.Date).Days;
+            <tr>
+                <td><a asp-action="Details" asp-route-id="@c.Id">@c.Descricao</a></td>
+                <td>@c.Cliente?.RazaoSocial</td>
+                <td>@c.DataVencimento.ToShortDateString()</td>
+                <td class="text-end">@Moeda(c.SaldoAReceber)</td>
+                <td><span class="badge bg-danger">@dias d</span></td>
+            </tr>
+        }
+        @if (!Model.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">Nenhuma conta inadimplente. 🎉</td></tr> }
+    </tbody>
+    @if (Model.Any())
+    {
+        <tfoot><tr class="fw-bold table-light"><td colspan="3">Total inadimplente</td><td class="text-end">@Moeda(Model.Sum(c => c.SaldoAReceber))</td><td></td></tr></tfoot>
+    }
+</table>

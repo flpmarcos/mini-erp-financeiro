@@ -1,0 +1,47 @@
+@using Microsoft.Extensions.Diagnostics.HealthChecks
+@{
+    ViewData["Title"] = "Status do Sistema";
+    var status = (string)ViewBag.Status;
+    var entries = (IReadOnlyDictionary<string, HealthReportEntry>)ViewBag.Entries;
+    var ok = status == "Healthy";
+}
+
+<h2 class="mb-3">Status do Sistema</h2>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="kpi @(ok ? "kpi--success" : "kpi--danger")">
+            <div class="kpi__label">Saúde geral</div>
+            <div class="kpi__value">@(ok ? "Operacional" : status)</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6"><div class="kpi kpi--neutral"><div class="kpi__label">Ambiente</div><div class="kpi__value" style="font-size:1.1rem">@ViewBag.Environment</div></div></div>
+    <div class="col-md-2 col-6"><div class="kpi kpi--primary"><div class="kpi__label">Banco</div><div class="kpi__value" style="font-size:1.1rem">@ViewBag.Provider</div></div></div>
+    <div class="col-md-2 col-6"><div class="kpi kpi--info"><div class="kpi__label">Versão</div><div class="kpi__value" style="font-size:1.1rem">@ViewBag.Versao</div></div></div>
+    <div class="col-md-2 col-6"><div class="kpi kpi--warning"><div class="kpi__label">Uptime</div><div class="kpi__value" style="font-size:.95rem">@ViewBag.Uptime</div></div></div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">Health Checks</div>
+    <table class="table mb-0">
+        <thead><tr><th>Verificação</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead>
+        <tbody>
+            @if (entries.Count == 0)
+            {
+                <tr><td colspan="4" class="text-muted">Liveness apenas (provider InMemory não registra health de banco).</td></tr>
+            }
+            @foreach (var e in entries)
+            {
+                var badge = e.Value.Status == HealthStatus.Healthy ? "bg-success" : e.Value.Status == HealthStatus.Degraded ? "bg-warning text-dark" : "bg-danger";
+                <tr>
+                    <td>@e.Key</td>
+                    <td><span class="badge @badge">@e.Value.Status</span></td>
+                    <td>@(e.Value.Description ?? "-")</td>
+                    <td>@e.Value.Duration.TotalMilliseconds.ToString("0") ms</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<p class="text-muted small mt-3">Endpoint máquina-a-máquina: <code>GET /health</code> · Logs estruturados (Serilog) em <code>logs/</code> com <code>CorrelationId</code>.</p>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="ff" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="12" fill="url(#ff)"/>
+  <!-- fluxo ascendente (finance flow) -->
+  <path d="M11 31 C18 31 19 19 26 19 C31 19 32 25 37 25"
+        fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- seta -->
+  <path d="M33 22.5 L37 25 L34.5 29" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- moeda -->
+  <circle cx="13" cy="17" r="3.4" fill="#fff"/>
+</svg>

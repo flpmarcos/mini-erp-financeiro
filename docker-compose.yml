@@ -1,0 +1,64 @@
+# Banco de dados para o sistema de Contas a Pagar.
+# Oracle Free 23 (primeira opcao). Para SQL Server, veja o servico comentado abaixo.
+#
+#   docker compose up -d        # sobe o banco
+#   docker compose down         # para o banco
+#   docker compose down -v      # para e APAGA os dados
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    container_name: contas-pagar-oracle
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: Oracle123          # senha do SYS/SYSTEM
+      APP_USER: appuser                   # usuario da aplicacao
+      APP_USER_PASSWORD: AppUser123       # senha do usuario da aplicacao
+    volumes:
+      - contas_pagar_oracle:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
+    restart: unless-stopped
+
+  # Aplicacao web (build do Dockerfile). Sobe junto com o Oracle.
+  #   docker compose up -d --build app
+  # Acesse: http://localhost:8080
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: contas-pagar-app
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__Provider: Oracle
+      ConnectionStrings__Default: "User Id=appuser;Password=AppUser123;Data Source=oracle:1521/FREEPDB1;"
+    depends_on:
+      oracle:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Alternativa: SQL Server (descomente e ajuste Database:Provider=SqlServer).
+  # ---------------------------------------------------------------------------
+  # sqlserver:
+  #   image: mcr.microsoft.com/mssql/server:2022-latest
+  #   container_name: contas-pagar-sqlserver
+  #   ports:
+  #     - "1433:1433"
+  #   environment:
+  #     ACCEPT_EULA: "Y"
+  #     MSSQL_SA_PASSWORD: "Your_password123"
+  #   volumes:
+  #     - contas_pagar_sqlserver:/var/opt/mssql
+
+volumes:
+  contas_pagar_oracle:
+    name: contas-pagar-oracle-data
+  # contas_pagar_sqlserver:
+  #   name: contas-pagar-sqlserver-data

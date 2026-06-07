@@ -1,0 +1,8 @@
+@model Cliente
+@{ ViewData["Title"] = "Novo Cliente"; }
+<h2 class="mb-3">Novo Cliente</h2>
+<form asp-action="Create" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <partial name="_ClienteForm" model="Model" />
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

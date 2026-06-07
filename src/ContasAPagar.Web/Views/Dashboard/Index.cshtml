@@ -1,0 +1,103 @@
+@model DashboardVM
+@{
+    ViewData["Title"] = "Dashboard";
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi kpi--primary">
+            <div class="kpi__label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>A pagar (mês)</div>
+            <div class="kpi__value">@Moeda(Model.TotalAPagarMes)</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi kpi--danger">
+            <div class="kpi__label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>Vencido</div>
+            <div class="kpi__value">@Moeda(Model.TotalVencido)</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi kpi--success">
+            <div class="kpi__label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>Pago (mês)</div>
+            <div class="kpi__value">@Moeda(Model.TotalPagoMes)</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi kpi--neutral">
+            <div class="kpi__label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Pendente</div>
+            <div class="kpi__value">@Moeda(Model.TotalPendente)</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi kpi--warning">
+            <div class="kpi__label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Em aprovação</div>
+            <div class="kpi__value">@Moeda(Model.TotalEmAprovacao)</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="kpi kpi--info">
+            <div class="kpi__label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>Parcial</div>
+            <div class="kpi__value">@Moeda(Model.TotalParcialmentePago)</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6"><div class="card"><div class="card-header">Despesas por Categoria</div>
+        <div class="card-body"><canvas id="chartCategoria"></canvas></div></div></div>
+    <div class="col-md-6"><div class="card"><div class="card-header">Despesas por Centro de Custo</div>
+        <div class="card-body"><canvas id="chartCentro"></canvas></div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card"><div class="card-header text-bg-danger">Contas Vencidas</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var c in Model.Vencidas)
+                {
+                    <li class="list-group-item d-flex justify-content-between">
+                        <a asp-controller="Contas" asp-action="Details" asp-route-id="@c.Id">@c.Descricao</a>
+                        <span><span class="text-danger">@c.DataVencimento.ToShortDateString()</span> · @Moeda(c.SaldoDevedor)</span>
+                    </li>
+                }
+                @if (!Model.Vencidas.Any()) { <li class="list-group-item text-muted">Nenhuma conta vencida.</li> }
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card"><div class="card-header text-bg-warning">Próximas do Vencimento (7 dias)</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var c in Model.ProximasDoVencimento)
+                {
+                    <li class="list-group-item d-flex justify-content-between">
+                        <a asp-controller="Contas" asp-action="Details" asp-route-id="@c.Id">@c.Descricao</a>
+                        <span>@c.DataVencimento.ToShortDateString() · @Moeda(c.SaldoDevedor)</span>
+                    </li>
+                }
+                @if (!Model.ProximasDoVencimento.Any()) { <li class="list-group-item text-muted">Nada nos próximos 7 dias.</li> }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const catLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PorCategoria.Select(x => x.Rotulo)));
+        const catData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PorCategoria.Select(x => x.Valor)));
+        const ccLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PorCentroCusto.Select(x => x.Rotulo)));
+        const ccData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PorCentroCusto.Select(x => x.Valor)));
+
+        const palette = window.CAP_COLORS || ['#4f46e5','#f59e0b','#0891b2','#059669','#dc2626'];
+        new Chart(document.getElementById('chartCategoria'), {
+            type: 'doughnut',
+            data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: palette, borderWidth: 0 }] },
+            options: { cutout: '62%', plugins: { legend: { position: 'right' } } }
+        });
+        new Chart(document.getElementById('chartCentro'), {
+            type: 'bar',
+            data: { labels: ccLabels, datasets: [{ label: 'Saldo a pagar', data: ccData, backgroundColor: '#4f46e5', borderRadius: 6 }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#eef1f6' } }, x: { grid: { display: false } } } }
+        });
+    </script>
+}

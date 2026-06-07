@@ -1,0 +1,10 @@
+@model Fornecedor
+@{ ViewData["Title"] = "Novo Fornecedor"; }
+
+<h2 class="mb-3">Novo Fornecedor</h2>
+<form asp-action="Create" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <partial name="_FornForm" model="Model" />
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,69 @@
+@model Fornecedor
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<input type="hidden" asp-for="Id" />
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="RazaoSocial" class="form-label">Razão Social</label>
+        <input asp-for="RazaoSocial" class="form-control" />
+        <span asp-validation-for="RazaoSocial" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="NomeFantasia" class="form-label">Nome Fantasia</label>
+        <input asp-for="NomeFantasia" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="TipoDocumento" class="form-label">Tipo</label>
+        <select asp-for="TipoDocumento" class="form-select" asp-items="Html.GetEnumSelectList<TipoDocumento>()"></select>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Documento" class="form-label">CNPJ / CPF</label>
+        <input asp-for="Documento" class="form-control" />
+        <span asp-validation-for="Documento" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Status" class="form-label">Status</label>
+        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<StatusFornecedor>()"></select>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Telefone" class="form-label">Telefone</label>
+        <input asp-for="Telefone" class="form-control" />
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Email" class="form-label">E-mail</label>
+        <input asp-for="Email" class="form-control" />
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Endereco" class="form-label">Endereço</label>
+        <input asp-for="Endereco" class="form-control" />
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="Banco" class="form-label">Banco</label>
+        <input asp-for="Banco" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Agencia" class="form-label">Agência</label>
+        <input asp-for="Agencia" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Conta" class="form-label">Conta</label>
+        <input asp-for="Conta" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="TipoConta" class="form-label">Tipo Conta</label>
+        <select asp-for="TipoConta" class="form-select" asp-items="Html.GetEnumSelectList<TipoContaBancaria>()">
+            <option value="">--</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="ChavePix" class="form-label">Chave PIX</label>
+        <input asp-for="ChavePix" class="form-control" />
+    </div>
+</div>
+
+<div class="mt-3">
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a class="btn btn-link" asp-action="Index">Cancelar</a>
+</div>

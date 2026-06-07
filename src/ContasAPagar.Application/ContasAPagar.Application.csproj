@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ContasAPagar.Web</RootNamespace>
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
+
+  <!-- Alguns serviços usam IHttpContextAccessor / IFormFile / ILogger. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.AspNetCore.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ContasAPagar.Domain\ContasAPagar.Domain.csproj" />
+    <ProjectReference Include="..\ContasAPagar.Infrastructure\ContasAPagar.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

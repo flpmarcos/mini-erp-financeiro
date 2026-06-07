@@ -1,0 +1,55 @@
+@model SolicitacaoCompra
+@{
+    ViewData["Title"] = "Compra " + Model.Id;
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2 class="mb-1">@Model.Descricao</h2>
+        <span class="badge @UiHelpers.BadgeCompra(Model.Status) fs-6">@Model.Status</span>
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="Index">← Voltar</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card"><div class="card-header">Dados da Solicitação</div><div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Fornecedor</dt><dd class="col-sm-8">@Model.Fornecedor?.RazaoSocial</dd>
+                <dt class="col-sm-4">Categoria</dt><dd class="col-sm-8">@Model.Categoria?.Nome</dd>
+                <dt class="col-sm-4">Centro de Custo</dt><dd class="col-sm-8">@Model.CentroCusto?.Nome</dd>
+                <dt class="col-sm-4">Valor Estimado</dt><dd class="col-sm-8">@Moeda(Model.ValorEstimado)</dd>
+                <dt class="col-sm-4">Solicitado por</dt><dd class="col-sm-8">@Model.SolicitadoPor</dd>
+                @if (!string.IsNullOrEmpty(Model.Justificativa)) { <dt class="col-sm-4">Justificativa</dt><dd class="col-sm-8">@Model.Justificativa</dd> }
+                @if (Model.DataRecebimento.HasValue) { <dt class="col-sm-4">Recebido em</dt><dd class="col-sm-8">@Model.DataRecebimento.Value.ToShortDateString()</dd> }
+                @if (Model.ContaPagarGeradaId.HasValue)
+                {
+                    <dt class="col-sm-4">Conta gerada</dt>
+                    <dd class="col-sm-8"><a asp-controller="Contas" asp-action="Details" asp-route-id="@Model.ContaPagarGeradaId">#@Model.ContaPagarGeradaId</a></dd>
+                }
+            </dl>
+        </div></div>
+    </div>
+    <div class="col-md-5">
+        <div class="card"><div class="card-header">Fluxo</div><div class="card-body d-grid gap-2">
+            @if (Model.Status == StatusCompra.Solicitada)
+            {
+                <form asp-action="Aprovar" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<button class="btn btn-primary w-100">Aprovar</button></form>
+                <form asp-action="Reprovar" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<button class="btn btn-outline-danger w-100">Reprovar</button></form>
+            }
+            else if (Model.Status == StatusCompra.Aprovada)
+            {
+                <form asp-action="EmitirPedido" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<button class="btn btn-info w-100">Emitir Pedido</button></form>
+            }
+            else if (Model.Status == StatusCompra.PedidoEmitido)
+            {
+                <form asp-action="Receber" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<button class="btn btn-success w-100">Confirmar Recebimento (gera AP)</button></form>
+            }
+            @if (Model.Status != StatusCompra.Recebida && Model.Status != StatusCompra.Cancelada)
+            {
+                <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Cancelar?');">@Html.AntiForgeryToken()<button class="btn btn-outline-secondary w-100">Cancelar</button></form>
+            }
+        </div></div>
+    </div>
+</div>

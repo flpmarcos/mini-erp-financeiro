@@ -1,0 +1,79 @@
+@{
+    ViewData["Title"] = "Assistente IA";
+    var sugestoes = (string[])ViewBag.Sugestoes;
+}
+
+<div class="rag-shell">
+    <section class="rag-main">
+        <header class="chat-main__head d-flex justify-content-between align-items-center">
+            <span>🤖 Assistente IA <span class="badge bg-secondary">RAG local</span></span>
+            <small class="text-muted">respostas com fontes · não inventa dados</small>
+        </header>
+        <div class="rag-msgs" id="ragMsgs">
+            <div class="rag-bubble rag-bubble--ai">
+                Olá! Pergunte sobre contas, fornecedores, aprovações, regras e políticas.
+                Eu respondo apenas com dados que você tem permissão de ver.
+            </div>
+        </div>
+        <form class="rag-input" id="ragForm" autocomplete="off">
+            <input id="ragInput" class="form-control" placeholder="Faça uma pergunta…" />
+            <button class="btn btn-primary" id="ragBtn">Perguntar</button>
+        </form>
+    </section>
+
+    <aside class="rag-side">
+        <div class="card"><div class="card-header">Sugestões</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var s in sugestoes)
+                {
+                    <li class="list-group-item rag-suggest small" onclick="perguntar(this.textContent)">@s</li>
+                }
+            </ul>
+        </div>
+        <div class="card"><div class="card-body small text-muted">
+            Fontes: banco de dados (contas, fornecedores, regras) + políticas internas, sempre filtradas por empresa e permissão.
+        </div></div>
+    </aside>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+const msgs = document.getElementById('ragMsgs');
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function bolha(texto, classe){ const d=document.createElement('div'); d.className='rag-bubble '+classe; d.innerHTML=esc(texto).replace(/\n/g,'<br>'); msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; return d; }
+
+async function perguntar(pergunta){
+  pergunta = (pergunta||document.getElementById('ragInput').value).trim();
+  if(!pergunta) return;
+  document.getElementById('ragInput').value='';
+  bolha(pergunta,'rag-bubble--user');
+  const carregando = bolha('Pensando…','rag-bubble--ai');
+  const fd = new FormData(); fd.append('pergunta', pergunta); fd.append('__RequestVerificationToken', token);
+  try{
+    const r = await fetch('/ChatRag/Perguntar',{method:'POST',body:fd});
+    const data = await r.json();
+    carregando.innerHTML = esc(data.resposta).replace(/\n/g,'<br>');
+    if(data.fontes && data.fontes.length){
+      const f=document.createElement('div'); f.className='rag-sources';
+      f.innerHTML = '<div class="text-muted">Fontes ('+data.trechos+' trechos):</div>' +
+        data.fontes.map(x=>{
+          const ent = x.entidade||'';
+          const link = ent.startsWith('ContaPagar:')?`/Contas/Details/${ent.split(':')[1]}`
+                     : ent.startsWith('Fornecedor:')?`/Fornecedores/Edit/${ent.split(':')[1]}`:null;
+          const label = esc(x.fonte+' · '+x.tipo);
+          return link?`<a class="rag-source" href="${link}">${label} ↗</a>`:`<span class="rag-source">${label}</span>`;
+        }).join('');
+      carregando.appendChild(f);
+    } else {
+      carregando.innerHTML += '<div class="rag-sources text-muted">Sem fontes — não encontrei dados autorizados.</div>';
+    }
+  }catch(e){ carregando.textContent='Erro ao consultar o assistente.'; }
+}
+
+document.getElementById('ragForm').addEventListener('submit', e=>{ e.preventDefault(); perguntar(); });
+</script>
+}

@@ -1,0 +1,40 @@
+@model PagedResult<AuditLog>
+@{ ViewData["Title"] = "Auditoria"; }
+
+<h2 class="mb-3">Trilha de Auditoria</h2>
+
+<table class="table table-sm bg-white">
+    <thead class="table-light">
+        <tr><th>Data/Hora</th><th>Usuário</th><th>IP</th><th>Ação</th><th>Entidade</th><th>ID</th><th>Campo</th><th>De</th><th>Para</th><th>Motivo</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var a in Model.Itens)
+        {
+            <tr>
+                <td>@a.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                <td>@a.Usuario</td>
+                <td><small class="text-muted">@a.Ip</small></td>
+                <td><span class="badge bg-secondary">@a.Acao</span></td>
+                <td>@a.Entidade</td>
+                <td>@a.EntidadeId</td>
+                <td>@a.Campo</td>
+                <td><small>@a.ValorAnterior</small></td>
+                <td><small>@a.ValorNovo</small></td>
+                <td><small>@a.Motivo</small></td>
+            </tr>
+        }
+        @if (!Model.Itens.Any()) { <tr><td colspan="10" class="text-center text-muted py-4">Sem registros.</td></tr> }
+    </tbody>
+</table>
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav><ul class="pagination">
+        @for (int p = 1; p <= Model.TotalPaginas; p++)
+        {
+            <li class="page-item @(p == Model.Pagina ? "active" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pagina="@p">@p</a>
+            </li>
+        }
+    </ul></nav>
+}

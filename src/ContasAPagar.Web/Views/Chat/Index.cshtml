@@ -1,0 +1,139 @@
+@{
+    ViewData["Title"] = "Chat Interno";
+    var usuarios = (List<string?>)ViewBag.Usuarios;
+    var areas = (string[])ViewBag.Areas;
+    var conversaInicial = ViewBag.ConversaInicial as int?;
+}
+
+<div class="chat-shell">
+    <!-- Conversas -->
+    <aside class="chat-list">
+        <div class="chat-list__head">
+            <strong>Conversas</strong>
+            <button class="btn btn-sm btn-primary" id="btnNova">+ Nova</button>
+        </div>
+        <div id="novaForm" class="chat-new d-none">
+            <input id="novoTitulo" class="form-control form-control-sm mb-1" placeholder="Título da conversa" />
+            <select id="novoTipo" class="form-select form-select-sm mb-1">
+                <option value="3">Grupo</option><option value="2">Área</option><option value="1">Individual</option>
+            </select>
+            <select id="novaArea" class="form-select form-select-sm mb-1">
+                <option value="">(sem área)</option>
+                @foreach (var a in areas) { <option value="@a">@a</option> }
+            </select>
+            <input id="novaConta" class="form-control form-control-sm mb-1" type="number" placeholder="Vincular Conta a Pagar (id, opcional)" />
+            <select id="novosParticipantes" class="form-select form-select-sm mb-1" multiple size="4">
+                @foreach (var u in usuarios) { <option value="@u">@u</option> }
+            </select>
+            <button class="btn btn-sm btn-success w-100" id="btnCriar">Criar conversa</button>
+        </div>
+        <ul class="chat-list__items" id="listaConversas"></ul>
+    </aside>
+
+    <!-- Mensagens -->
+    <section class="chat-main">
+        <header class="chat-main__head" id="chatHead"><span class="text-muted">Selecione uma conversa</span></header>
+        <div class="chat-msgs" id="mensagens"></div>
+        <div class="chat-typing" id="digitando"></div>
+        <form class="chat-input" id="formMsg" autocomplete="off">
+            <input id="txtMsg" class="form-control" placeholder="Mensagem… use @@ para mencionar" disabled />
+            <button class="btn btn-primary" id="btnEnviar" disabled>Enviar</button>
+        </form>
+    </section>
+
+    <!-- Contexto -->
+    <aside class="chat-context" id="contexto">
+        <div class="chat-context__head">Contexto</div>
+        <div class="chat-context__body text-muted small">Abra uma conversa para ver vínculos e participantes.</div>
+    </aside>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+<script>
+const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+const minhaArea = '@ViewBag.MinhaArea';
+let conversaAtual = null;
+const elLista = document.getElementById('listaConversas');
+const elMsgs = document.getElementById('mensagens');
+const elHead = document.getElementById('chatHead');
+const elCtx = document.querySelector('.chat-context__body');
+
+const conn = new signalR.HubConnectionBuilder().withUrl('/chatHub').withAutomaticReconnect().build();
+conn.on('ReceberMensagem', m => { if (m.conversationId === conversaAtual) addMsg(m); });
+let typingTimer;
+conn.on('Digitando', user => {
+  document.getElementById('digitando').textContent = user + ' está digitando…';
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => document.getElementById('digitando').textContent = '', 1500);
+});
+conn.on('Erro', e => alert(e));
+conn.start().catch(console.error);
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function addMsg(m){
+  const div = document.createElement('div');
+  div.className = 'msg' + (m.excluida ? ' msg--del' : '');
+  div.innerHTML = `<div class="msg__meta"><span class="badge bg-secondary">${esc(m.autorArea)}</span> <strong>${esc(m.autor)}</strong>
+      <span class="text-muted">${new Date(m.criadoEm).toLocaleString('pt-BR')}</span>${m.fixada?' 📌':''}</div>
+      <div class="msg__txt">${esc(m.texto)}</div>`;
+  elMsgs.appendChild(div);
+  elMsgs.scrollTop = elMsgs.scrollHeight;
+}
+
+async function carregarConversas(){
+  const r = await fetch('/Chat/Conversas'); const data = await r.json();
+  elLista.innerHTML = '';
+  data.forEach(c => {
+    const li = document.createElement('li');
+    li.className = 'chat-item' + (c.id===conversaAtual?' active':'');
+    li.innerHTML = `<div>${esc(c.titulo)}</div><small class="text-muted">${esc(c.tipo)}${c.area?(' · '+esc(c.area)):''}${c.auditavel?' · 🔗':''}</small>`;
+    li.onclick = () => abrir(c);
+    elLista.appendChild(li);
+  });
+}
+
+async function abrir(c){
+  if (conversaAtual) await conn.invoke('Sair', conversaAtual);
+  conversaAtual = c.id;
+  await conn.invoke('Entrar', conversaAtual);
+  elHead.innerHTML = `<strong>${esc(c.titulo)}</strong> <span class="badge bg-secondary">${esc(c.tipo)}</span>`;
+  document.getElementById('txtMsg').disabled = false; document.getElementById('btnEnviar').disabled = false;
+  elCtx.innerHTML = `<div class="mb-2"><span class="badge bg-secondary">${esc(c.area||'sem área')}</span></div>
+    ${c.contaPagarId?`<a class="btn btn-sm btn-outline-primary w-100 mb-1" href="/Contas/Details/${c.contaPagarId}">Abrir conta #${c.contaPagarId}</a>`:''}
+    ${c.fornecedorId?`<a class="btn btn-sm btn-outline-primary w-100 mb-1" href="/Fornecedores/Edit/${c.fornecedorId}">Abrir fornecedor</a>`:''}
+    ${c.auditavel?'<div class="small text-muted">Conversa auditável (vinculada a processo).</div>':''}`;
+  const hist = await (await fetch('/Chat/Historico?id='+conversaAtual)).json();
+  elMsgs.innerHTML = ''; hist.forEach(addMsg);
+  carregarConversas();
+}
+
+document.getElementById('formMsg').addEventListener('submit', async e => {
+  e.preventDefault();
+  const txt = document.getElementById('txtMsg').value.trim();
+  if (!txt || !conversaAtual) return;
+  await conn.invoke('Enviar', conversaAtual, txt);
+  document.getElementById('txtMsg').value = '';
+});
+document.getElementById('txtMsg').addEventListener('input', () => { if (conversaAtual) conn.invoke('Digitando', conversaAtual); });
+
+document.getElementById('btnNova').onclick = () => document.getElementById('novaForm').classList.toggle('d-none');
+document.getElementById('btnCriar').onclick = async () => {
+  const fd = new FormData();
+  fd.append('Titulo', document.getElementById('novoTitulo').value);
+  fd.append('Tipo', document.getElementById('novoTipo').value);
+  const area = document.getElementById('novaArea').value; if (area) fd.append('Area', area);
+  const conta = document.getElementById('novaConta').value; if (conta) fd.append('ContaPagarId', conta);
+  Array.from(document.getElementById('novosParticipantes').selectedOptions).forEach(o => fd.append('Participantes', o.value));
+  fd.append('__RequestVerificationToken', token);
+  const r = await fetch('/Chat/Criar', { method:'POST', body: fd });
+  if (r.ok) { document.getElementById('novaForm').classList.add('d-none'); await carregarConversas(); }
+  else alert(await r.text());
+};
+
+carregarConversas().then(() => { @(conversaInicial.HasValue ? $"fetch('/Chat/Conversas').then(r=>r.json()).then(d=>{{const c=d.find(x=>x.id=={conversaInicial});if(c)abrir(c);}});" : "") });
+</script>
+}

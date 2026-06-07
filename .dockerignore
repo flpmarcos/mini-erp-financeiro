@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/logs/
+**/*.user
+tests/
+.github/
+*.md

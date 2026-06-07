@@ -1,0 +1,7 @@
+@model RegraAprovacao
+@{ ViewData["Title"] = "Nova Regra"; }
+<h2 class="mb-3">Nova Regra de Aprovação</h2>
+<form asp-action="Create" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <partial name="_RegraForm" model="Model" />
+</form>

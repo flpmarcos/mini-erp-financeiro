@@ -1,0 +1,10 @@
+@model ContaPagarFormVM
+@{ ViewData["Title"] = "Editar Conta"; }
+
+<h2 class="mb-3">Editar Conta a Pagar</h2>
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <partial name="_Form" model="Model" />
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

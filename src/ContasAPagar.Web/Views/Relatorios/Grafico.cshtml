@@ -1,0 +1,39 @@
+@model List<GraficoItem>
+@{
+    ViewData["Title"] = (string)ViewBag.Titulo;
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between mb-3">
+    <h2>@ViewBag.Titulo</h2>
+    <a class="btn btn-outline-secondary" asp-action="Index">← Relatórios</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7"><div class="card"><div class="card-body"><canvas id="chart"></canvas></div></div></div>
+    <div class="col-md-5">
+        <table class="table table-sm bg-white">
+            <thead class="table-light"><tr><th>@ViewBag.Titulo</th><th class="text-end">Valor</th></tr></thead>
+            <tbody>
+                @foreach (var i in Model) { <tr><td>@i.Rotulo</td><td class="text-end">@Moeda(i.Valor)</td></tr> }
+                @if (!Model.Any()) { <tr><td colspan="2" class="text-muted text-center py-3">Sem dados.</td></tr> }
+            </tbody>
+            @if (Model.Any())
+            {
+                <tfoot><tr class="fw-bold table-light"><td>Total</td><td class="text-end">@Moeda(Model.Sum(x => x.Valor))</td></tr></tfoot>
+            }
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(x => x.Rotulo)));
+        const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(x => x.Valor)));
+        new Chart(document.getElementById('chart'), {
+            type: 'bar',
+            data: { labels, datasets: [{ label: '@ViewBag.Titulo', data, backgroundColor: '#4f46e5', borderRadius: 6 }] },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#eef1f6' } }, y: { grid: { display: false } } } }
+        });
+    </script>
+}

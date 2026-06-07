@@ -1,0 +1,192 @@
+@model ContaPagar
+@{
+    ViewData["Title"] = "Conta " + Model.Id;
+    var enc = (CalculoEncargos)ViewBag.Encargos;
+    var parcelas = ViewBag.Parcelas as List<ContaPagar>;
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+    bool podePagar = Model.Status is StatusConta.LiberadaParaPagamento or StatusConta.Aprovada
+                     or StatusConta.Vencida or StatusConta.ParcialmentePaga or StatusConta.Pendente;
+    bool podeAprovar = Model.Status is StatusConta.Pendente or StatusConta.Rascunho or StatusConta.Reprovada or StatusConta.Vencida;
+}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h2 class="mb-1">@Model.Descricao</h2>
+        <span class="badge @UiHelpers.BadgeConta(Model.Status) fs-6">@Model.Status</span>
+        @if (Model.EhParcelada) { <span class="badge bg-light text-dark">Parcela @Model.NumeroParcela/@Model.TotalParcelas</span> }
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="Index">← Voltar</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card mb-3"><div class="card-header">Dados da Conta</div><div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Fornecedor</dt><dd class="col-sm-8">@Model.Fornecedor?.RazaoSocial</dd>
+                <dt class="col-sm-4">Categoria</dt><dd class="col-sm-8">@Model.Categoria?.Nome</dd>
+                <dt class="col-sm-4">Centro de Custo</dt><dd class="col-sm-8">@Model.CentroCusto?.Nome</dd>
+                <dt class="col-sm-4">Forma de Pagamento</dt><dd class="col-sm-8">@Model.FormaPagamento</dd>
+                <dt class="col-sm-4">Emissão</dt><dd class="col-sm-8">@Model.DataEmissao.ToShortDateString()</dd>
+                <dt class="col-sm-4">Vencimento</dt><dd class="col-sm-8">@Model.DataVencimento.ToShortDateString()</dd>
+                @if (Model.DataPagamento.HasValue) { <dt class="col-sm-4">Pagamento</dt><dd class="col-sm-8">@Model.DataPagamento.Value.ToShortDateString()</dd> }
+                @if (!string.IsNullOrEmpty(Model.CodigoBarras)) { <dt class="col-sm-4">Código de Barras</dt><dd class="col-sm-8"><small>@Model.CodigoBarras</small></dd> }
+                @if (!string.IsNullOrEmpty(Model.ChavePix)) { <dt class="col-sm-4">Chave PIX</dt><dd class="col-sm-8">@Model.ChavePix</dd> }
+                @if (!string.IsNullOrEmpty(Model.Observacao)) { <dt class="col-sm-4">Observação</dt><dd class="col-sm-8">@Model.Observacao</dd> }
+            </dl>
+        </div></div>
+
+        @if (Model.Retencoes.Any())
+        {
+            <div class="card mb-3"><div class="card-header">Retenção de Impostos</div>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Imposto</th><th>Alíquota</th><th class="text-end">Valor</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model.Retencoes)
+                        { <tr><td>@r.Tipo</td><td>@r.Aliquota.ToString("0.##")%</td><td class="text-end">@Moeda(r.Valor)</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (Model.Baixas.Any())
+        {
+            <div class="card mb-3"><div class="card-header">Histórico de Baixas</div>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Data</th><th class="text-end">Valor</th><th>Banco</th><th>Forma</th></tr></thead>
+                    <tbody>
+                        @foreach (var b in Model.Baixas)
+                        { <tr><td>@b.DataPagamento.ToShortDateString()</td><td class="text-end">@Moeda(b.ValorPago)</td><td>@b.ContaBancaria?.Nome</td><td>@b.FormaPagamento</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (Model.Transacoes.Any())
+        {
+            <div class="card mb-3"><div class="card-header">Transações Bancárias (simuladas)</div>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Banco</th><th>Tipo</th><th>Código</th><th class="text-end">Valor</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var t in Model.Transacoes)
+                        { <tr><td>@t.Banco</td><td>@t.TipoPagamento</td><td><small>@t.CodigoTransacao</small></td><td class="text-end">@Moeda(t.Valor)</td><td><span class="badge @UiHelpers.BadgeTransacao(t.Status)">@t.Status</span></td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @{ var anexos = ViewBag.Anexos as List<Anexo> ?? new List<Anexo>(); }
+        <div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center">
+            <span>Anexos</span>
+            <small class="text-muted">PDF, imagem, XML ou TXT · até 5 MB</small>
+        </div>
+            @if (anexos.Any())
+            {
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Arquivo</th><th>Tipo</th><th>Tamanho</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var a in anexos)
+                        {
+                            <tr>
+                                <td><a asp-controller="Anexos" asp-action="Download" asp-route-id="@a.Id">@a.NomeArquivo</a></td>
+                                <td><span class="badge bg-secondary">@a.Tipo</span></td>
+                                <td>@($"{a.Tamanho / 1024.0:0.#} KB")</td>
+                                <td>
+                                    <form asp-controller="Anexos" asp-action="Delete" method="post" asp-route-id="@a.Id" asp-route-contaPagarId="@Model.Id" onsubmit="return confirm('Remover anexo?');">
+                                        @Html.AntiForgeryToken()
+                                        <button class="btn btn-sm btn-outline-danger">×</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else { <div class="card-body text-muted small">Nenhum anexo.</div> }
+            <div class="card-body border-top">
+                <form asp-controller="Anexos" asp-action="Upload" method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="contaPagarId" value="@Model.Id" />
+                    <div class="col-md-4">
+                        <label class="form-label small">Tipo</label>
+                        <select name="tipo" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<TipoAnexo>()"></select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small">Arquivo</label>
+                        <input type="file" name="arquivo" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-3"><button class="btn btn-sm btn-primary w-100">Anexar</button></div>
+                </form>
+            </div>
+        </div>
+
+        @if (parcelas != null && parcelas.Any())
+        {
+            <div class="card mb-3"><div class="card-header">Parcelas da Compra</div>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>#</th><th>Vencimento</th><th class="text-end">Valor</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var p in parcelas)
+                        {
+                            <tr>
+                                <td>@p.NumeroParcela/@p.TotalParcelas</td>
+                                <td>@p.DataVencimento.ToShortDateString()</td>
+                                <td class="text-end">@Moeda(p.ValorLiquido)</td>
+                                <td><span class="badge @UiHelpers.BadgeConta(p.Status)">@p.Status</span></td>
+                                <td><a class="btn btn-sm btn-link" asp-action="Details" asp-route-id="@p.Id">abrir</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="col-md-5">
+        <div class="card mb-3"><div class="card-header">Valores</div><div class="card-body">
+            <table class="table table-sm mb-0">
+                <tr><td>Valor Original</td><td class="text-end">@Moeda(Model.ValorOriginal)</td></tr>
+                <tr><td>Valor Líquido</td><td class="text-end fw-bold">@Moeda(Model.ValorLiquido)</td></tr>
+                <tr><td>Pago</td><td class="text-end">@Moeda(Model.ValorPago)</td></tr>
+                <tr><td>Saldo Devedor</td><td class="text-end">@Moeda(Model.SaldoDevedor)</td></tr>
+            </table>
+            @if (enc.DiasAtraso > 0)
+            {
+                <div class="alert alert-danger mt-2 mb-0">
+                    <strong>@enc.DiasAtraso dia(s) em atraso</strong><br />
+                    Multa: @Moeda(enc.Multa) · Juros: @Moeda(enc.Juros)<br />
+                    <strong>Valor atualizado: @Moeda(enc.ValorAtualizado)</strong>
+                </div>
+            }
+        </div></div>
+
+        <div class="card"><div class="card-header">Ações</div><div class="card-body d-grid gap-2">
+            @if (podeAprovar)
+            {
+                <form asp-action="EnviarAprovacao" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-warning w-100">Enviar para Aprovação</button>
+                </form>
+            }
+            @if (podePagar)
+            {
+                <a class="btn btn-success" asp-action="Baixar" asp-route-id="@Model.Id">Pagar / Baixar</a>
+            }
+            @if (Model.Status == StatusConta.Paga || Model.Status == StatusConta.ParcialmentePaga)
+            {
+                <form asp-action="Estornar" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Estornar este pagamento?');" class="d-grid gap-1">
+                    @Html.AntiForgeryToken()
+                    <input name="motivo" class="form-control form-control-sm" placeholder="motivo do estorno" required />
+                    <button class="btn btn-outline-warning btn-sm">Estornar Pagamento</button>
+                </form>
+            }
+            @if (Model.Status != StatusConta.Paga && Model.Status != StatusConta.Cancelada)
+            {
+                <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
+                <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Cancelar esta conta?');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-danger w-100">Cancelar Conta</button>
+                </form>
+            }
+        </div></div>
+    </div>
+</div>

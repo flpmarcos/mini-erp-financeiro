@@ -1,0 +1,67 @@
+@model PagedResult<ContaReceber>
+@{
+    ViewData["Title"] = "Contas a Receber";
+    var f = (ContaReceberFiltroVM)ViewBag.Filtro;
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Contas a Receber</h2>
+    <div>
+        <a class="btn btn-outline-danger" asp-action="Inadimplencia">Inadimplência</a>
+        <a class="btn btn-primary" asp-action="Create">+ Nova Conta a Receber</a>
+    </div>
+</div>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <label class="form-label small">Status</label>
+            <select name="Status" class="form-select" asp-items="ViewBag.Status"><option value="">(todos)</option></select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Cliente</label>
+            <select name="ClienteId" class="form-select" asp-items="ViewBag.Clientes"><option value="">(todos)</option></select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Venc. de</label>
+            <input type="date" name="VencimentoDe" class="form-control" value="@f.VencimentoDe?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Venc. até</label>
+            <input type="date" name="VencimentoAte" class="form-control" value="@f.VencimentoAte?.ToString("yyyy-MM-dd")" />
+        </div>
+    </div>
+    <div class="mt-2"><button class="btn btn-sm btn-dark">Filtrar</button> <a class="btn btn-sm btn-link" asp-action="Index">Limpar</a></div>
+</form>
+
+<table class="table table-hover table-sm align-middle bg-white">
+    <thead class="table-light">
+        <tr><th>Descrição</th><th>Cliente</th><th>Vencimento</th><th class="text-end">Valor</th><th class="text-end">Saldo</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var c in Model.Itens)
+        {
+            <tr>
+                <td>@c.Descricao</td>
+                <td>@(c.Cliente?.NomeFantasia ?? c.Cliente?.RazaoSocial)</td>
+                <td>@c.DataVencimento.ToShortDateString()</td>
+                <td class="text-end">@Moeda(c.Valor)</td>
+                <td class="text-end">@Moeda(c.SaldoAReceber)</td>
+                <td><span class="badge @UiHelpers.BadgeReceber(c.Status)">@c.Status</span></td>
+                <td><a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@c.Id">Abrir</a></td>
+            </tr>
+        }
+        @if (!Model.Itens.Any()) { <tr><td colspan="7" class="text-center text-muted py-4">Nenhuma conta a receber.</td></tr> }
+    </tbody>
+</table>
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav><ul class="pagination">
+        @for (int p = 1; p <= Model.TotalPaginas; p++)
+        {
+            <li class="page-item @(p == Model.Pagina ? "active" : "")"><a class="page-link" asp-action="Index" asp-route-Pagina="@p">@p</a></li>
+        }
+    </ul></nav>
+}
