@@ -26,10 +26,10 @@
 
 ## Índice
 
-1. [O que é um sistema de Contas a Pagar](#1-o-que-é-um-sistema-de-contas-a-pagar)
-2. [Por que desenvolver](#2-por-que-desenvolver-um-sistema-de-contas-a-pagar)
-3. [Quando usar](#3-quando-usar)
-4. [Funcionalidades](#4-principais-funcionalidades)
+1. [O que é um ERP](#1-o-que-é-um-erp)
+2. [Como funciona um ERP](#2-como-funciona-um-erp)
+3. [Módulos do FinFlow](#3-módulos-do-finflow)
+4. [Por que e quando usar um ERP](#4-por-que-e-quando-usar-um-erp)
 5. [Regras de negócio implementadas](#5-regras-de-negócio-implementadas)
 6. [Tecnologias](#6-tecnologias-utilizadas)
 7. [Pré-requisitos e instalação](#7-pré-requisitos-e-instalação)
@@ -79,58 +79,86 @@ Projeto **exclusivamente educacional**. Tudo que parece "real" é **simulado**:
 
 ---
 
-## 1. O que é um sistema de Contas a Pagar
+## 1. O que é um ERP
 
-É o módulo financeiro que controla **todas as obrigações que a empresa precisa pagar**: fornecedores, serviços, impostos, aluguel, folha, contratos, boletos e despesas operacionais. Ele responde três perguntas centrais:
+**ERP** (*Enterprise Resource Planning* — Planejamento de Recursos da Empresa) é um sistema que **integra, em um único lugar, os processos e os dados das várias áreas** de uma empresa — financeiro, compras, vendas, estoque, fiscal, RH — no lugar de planilhas e sistemas isolados que não conversam entre si.
 
-- **O que** preciso pagar?
-- **Quando** preciso pagar?
-- **Quanto** vou pagar (com multa/juros/impostos)?
+A ideia central: **um dado é cadastrado uma vez e reaproveitado por todos os módulos**. Um fornecedor cadastrado serve para Compras, Contas a Pagar e relatórios; um pedido de compra recebido vira automaticamente uma conta a pagar; um pagamento atualiza o fluxo de caixa e a conciliação. Tudo com **permissões por perfil**, **trilha de auditoria** e suporte a **múltiplas empresas**.
 
-## 2. Por que desenvolver um sistema de Contas a Pagar
+> O **FinFlow** é um **mini-ERP focado no domínio financeiro**. Começou no módulo de Contas a Pagar e cresceu para um sistema com Contas a Receber, Fluxo de Caixa, Compras e vários módulos de apoio — mantendo o caráter didático. **Contas a Pagar é só um dos módulos.**
 
-Sem controle de contas a pagar, a empresa paga em atraso (multa + juros), paga duplicado, paga fornecedor errado, perde rastreabilidade e não consegue prever o caixa. Um sistema desses ajuda a empresa a:
+## 2. Como funciona um ERP
 
-- Saber o que e quando pagar
-- Evitar atrasos, multas e juros
-- Controlar **aprovações** (alçadas)
-- Organizar despesas por **centro de custo** e **categoria**
-- Registrar **histórico** de pagamentos
-- **Integrar** pagamentos com bancos
-- **Conciliar** pagamentos com extratos bancários
-- Gerar **relatórios** financeiros e apoiar o **fluxo de caixa**
+Pilares de um ERP — todos implementados aqui:
 
-### Como ele se conecta com o resto do financeiro
-- **Fornecedores:** cada conta aponta para um fornecedor (com dados bancários/PIX).
-- **Bancos:** o pagamento dispara uma transação bancária (aqui simulada — ver seção 15).
-- **Fluxo de caixa:** o relatório de fluxo previsto agrupa o saldo a pagar por mês de vencimento.
-- **Conciliação bancária:** importa o extrato (CSV) e casa lançamentos com pagamentos.
-- **Auditoria:** registra quem alterou o quê (valor, vencimento, aprovação, pagamento...).
-- **Relatórios:** vencidas, a vencer, pagas, por fornecedor/centro/categoria, impostos, por banco.
+- **Núcleo de dados compartilhado** — cadastros (parceiros, centros de custo, categorias, contas bancárias) usados por todos os módulos, num único banco/`DbContext`.
+- **Módulos integrados** — cada área é um módulo, mas eles **disparam ações uns nos outros**. Ex.: *Compra recebida → gera Conta a Pagar*; *Pagamento → atualiza Fluxo de Caixa e Conciliação*; *Aprovação pendente → notifica o perfil responsável*.
+- **Processos que cruzam módulos** — fluxos de ponta a ponta, não telas isoladas.
+- **Perfis e permissões (RBAC)** — Admin, Financeiro, Gerente, Diretor, Auditor: cada um vê/faz o que sua função permite.
+- **Multiempresa (multitenant)** — dados isolados por empresa; um usuário não enxerga dados de outra.
+- **Governança** — auditoria de quem fez o quê, aprovações por alçada, notificações.
+- **Camada de integração** — bancos, CNAB, webhooks, API REST e até IA (assistente RAG) plugáveis.
 
-## 3. Quando usar
+Fluxo principal do FinFlow:
+```
+ Compras ──────► Contas a Pagar ─┐
+ (Vendas) ─────► Contas a Receber ┼──► Fluxo de Caixa ──► Dashboard / Relatórios
+ Bancos ───────► Conciliação ─────┘            ▲
+        Aprovações · Auditoria · Notificações · Chat interno · Assistente IA
+```
+Exemplo de processo (ciclo de compra):
+`Solicitação → Aprovação → Pedido → Recebimento → Conta a Pagar → Pagamento → Conciliação → Auditoria`.
 
-Empresas que têm muitos fornecedores, exigem aprovação antes de pagar, têm despesas recorrentes/parceladas, retêm impostos, precisam de rastreabilidade/auditoria, querem integrar com bancos e dependem de relatórios financeiros confiáveis.
+## 3. Módulos do FinFlow
 
----
+**Núcleo / cadastros**
+| Módulo | O que faz |
+|---|---|
+| Empresas (multitenant) | isola todos os dados por empresa |
+| Parceiros | Fornecedores **e** Clientes (CPF/CNPJ, dados bancários/PIX, status) |
+| Centros de custo & Categorias | classificação de despesas/receitas |
+| Contas bancárias | contas da empresa de onde sai/entra dinheiro |
 
-## 4. Principais funcionalidades
+**Processos financeiros**
+| Módulo | O que faz |
+|---|---|
+| **Compras** | Solicitação → Aprovação → Pedido → Recebimento → **gera Conta a Pagar** |
+| **Contas a Pagar** | obrigações: 11 status, parcelamento, juros/multa, retenção de impostos, baixa |
+| **Contas a Receber** | faturas de clientes, recebimento total/parcial, inadimplência |
+| **Fluxo de Caixa** | consolida AP + AR + saldos; projeções 7/30/90 dias |
+| **Workflow de Aprovação** | alçadas configuráveis (valor/categoria/centro/fornecedor) |
 
-| # | Módulo | O que faz |
-|---|--------|-----------|
-| 1 | **Fornecedores** | Cadastro com dados bancários/PIX, status (Ativo/Bloqueado/Inativo), validação de CPF/CNPJ |
-| 2 | **Contas a Pagar** | CRUD com 11 status, valores líquido/pago/saldo, datas, forma de pagamento |
-| 3 | **Parcelamento** | Gera N parcelas vinculadas a uma compra de origem |
-| 4 | **Aprovação** | Fluxo por alçada (automática / gerente / diretor) |
-| 5 | **Pagamento / Baixa** | Baixa total ou parcial, integração bancária fake, histórico |
-| 6 | **Juros e Multa** | Cálculo automático de encargos de atraso (configurável) |
-| 7 | **Retenção de Impostos** | ISS, INSS, IRRF, PIS, COFINS, CSLL → valor líquido |
-| 8 | **Centro de custo / Categoria** | CRUD de cadastros auxiliares |
-| 9 | **Integração bancária (fake)** | BB, Itaú, Santander e Genérico, com payloads/log |
-| 10 | **Conciliação** | Importa extrato CSV e concilia automática/manualmente |
-| 11 | **Auditoria** | Trilha de alterações importantes |
-| 12 | **Relatórios** | 11 relatórios financeiros |
-| 13 | **Dashboard** | Indicadores + gráficos (Chart.js) |
+**Integrações**
+| Módulo | O que faz |
+|---|---|
+| Integração bancária | PIX/TED/boleto (fake: BB/Itaú/Santander) + estorno + webhooks + retry |
+| CNAB | geração de remessa e processamento de retorno |
+| Conciliação bancária | importa extrato CSV e casa com pagamentos |
+| Anexos | NF/boleto/contrato/comprovante (disco → pronto p/ S3) |
+| API REST + Swagger | `/api/v1/*` para integração externa |
+
+**Governança & colaboração**
+| Módulo | O que faz |
+|---|---|
+| Autenticação & RBAC | 5 perfis, proteção de rotas MVC + API |
+| Auditoria | trilha de quem fez o quê (com IP e motivo) |
+| Notificações | sininho interno + canais fake (e-mail/WhatsApp) |
+| Jobs (Hangfire) | rotinas: marcar vencidas, alertas, retry bancário |
+| **Chat interno (SignalR)** | conversas entre áreas em tempo real, vinculadas a processos |
+| **Assistente IA (RAG)** | perguntas em linguagem natural, com fontes, respeitando permissão/empresa |
+
+**Análise & operação**
+| Módulo | O que faz |
+|---|---|
+| Dashboard | KPIs + gráficos (Chart.js) |
+| Relatórios | vencidas, a vencer, por fornecedor/centro/categoria, impostos, por banco |
+| Observabilidade | Serilog, health checks, página de Status |
+
+## 4. Por que e quando usar um ERP
+
+**Por que:** sem um ERP, cada área vive em planilhas/sistemas isolados → dado duplicado e inconsistente, retrabalho, pagamento em atraso ou duplicado, falta de visão de caixa, zero rastreabilidade. Um ERP **unifica o dado, automatiza os fluxos entre áreas e impõe governança** (aprovações, auditoria, permissões).
+
+**Quando:** empresas com vários fornecedores/clientes, que exigem aprovação antes de pagar, têm despesas recorrentes/parceladas, retêm impostos, querem integrar com bancos, precisam de relatórios confiáveis e de **isolar dados por empresa**.
 
 ## 5. Regras de negócio implementadas
 
