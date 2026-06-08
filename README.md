@@ -31,6 +31,7 @@
 3. [Módulos do FinFlow](#3-módulos-do-finflow)
 4. [Por que e quando usar um ERP](#4-por-que-e-quando-usar-um-erp)
 - 📚 [Entenda os conceitos: conciliação, plano de contas, partida dobrada](#-entenda-os-conceitos-em-português-claro)
+- 🔄 [Fluxo financeiro completo (início → meio → fim) + processos cíclicos](#-fluxo-financeiro-completo-início--meio--fim)
 5. [Regras de negócio implementadas](#5-regras-de-negócio-implementadas)
 6. [Tecnologias](#6-tecnologias-utilizadas)
 7. [Pré-requisitos e instalação](#7-pré-requisitos-e-instalação)
@@ -231,6 +232,101 @@ C  3.1.01 Receita de Vendas     1.000   (receita aumentou)
 - **DRE** — Demonstração de Resultado: **Receitas − Despesas = lucro/prejuízo** do período.
 
 No FinFlow esses lançamentos são gerados **sozinhos** a cada baixa/recebimento, mas você também pode lançar manualmente em **Contabilidade → Novo Lançamento** (o sistema **recusa** se débitos ≠ créditos).
+
+## 🔄 Fluxo financeiro completo (início → meio → fim)
+
+> Esta seção é o **coração didático** do projeto. Mostra a vida de um dinheiro dentro do ERP — de onde ele nasce, por onde passa e onde termina — além dos **processos cíclicos** que se repetem todo mês.
+
+### Visão geral (os dois ciclos que se encontram no caixa)
+
+```
+        ┌─────────────────── CICLO DE DESPESA (Pagar) ───────────────────┐
+        │                                                                │
+  Necessidade → Compra → Conta a Pagar → Aprovação → Pagamento → Lançamento → Conciliação
+  de comprar     (PO)     (obrigação)     (alçada)    (baixa)     contábil      bancária
+        │                                                │             │            │
+        └────────────────────────────────────────────────┼─────────────┼────────────┘
+                                                          ▼             ▼
+                                                    ┌──────────┐  ┌───────────────┐
+                                                    │  CAIXA   │  │ Balancete/DRE │
+                                                    │ (Fluxo)  │  │ (fechamento)  │
+                                                    └──────────┘  └───────────────┘
+                                                          ▲             ▲
+        ┌────────────────────────────────────────────────┼─────────────┼────────────┐
+        │                                                 │             │            │
+   Venda/Serviço → Conta a Receber → Cobrança → Recebimento → Lançamento → Conciliação
+   ao cliente       (direito)        (fatura)    (baixa)      contábil      bancária
+        │                                                                            │
+        └─────────────────── CICLO DE RECEITA (Receber) ─────────────────────────────┘
+```
+
+Tudo desemboca no **Caixa** (visão de liquidez) e no **fechamento contábil** (Balancete/DRE). São dois ciclos espelhados: um **tira** dinheiro, outro **traz**.
+
+---
+
+### Ciclo de DESPESA — Contas a Pagar (início → meio → fim)
+
+**INÍCIO — nasce a obrigação**
+1. **Necessidade de compra** → módulo **Compras**: solicitação → aprovação → pedido (PO) → recebimento da mercadoria/serviço.
+2. O recebimento **gera automaticamente uma Conta a Pagar** (ou cadastra-se a conta direto, ex.: aluguel, energia).
+3. A conta nasce com status `EmAberto`, valor, vencimento, fornecedor, categoria e centro de custo.
+
+**MEIO — a obrigação amadurece e é autorizada**
+4. **Workflow de Aprovação**: conforme a **alçada** (valor/categoria/centro/fornecedor), a conta vai para `AguardandoAprovacao` → `Aprovada` ou `Reprovada`.
+5. Se vencer antes de pagar → `Vencida` (um **job** marca isso sozinho) e passa a exibir **valor atualizado** (multa + juros).
+6. Retenção de impostos (ISS, IRRF, INSS, etc.) é calculada sobre a conta.
+
+**FIM — a obrigação é quitada**
+7. **Baixa / Pagamento**: paga total ou parcial (PIX/TED/boleto). Status → `Paga` ou `ParcialmentePaga`.
+8. **Disparo automático ao pagar:**
+   - **Lançamento contábil** `D Despesas / C Bancos` (a contabilidade registra o fato);
+   - o **Fluxo de Caixa** reflete a saída.
+9. **Conciliação bancária**: o extrato do banco confirma que o dinheiro realmente saiu → linha do extrato casa com a conta paga.
+
+**Caminho de exceção (volta atrás):** **Estorno** reverte o pagamento e **gera lançamento contábil inverso** (`C Despesas / D Bancos`), mantendo a contabilidade coerente.
+
+---
+
+### Ciclo de RECEITA — Contas a Receber (início → meio → fim)
+
+**INÍCIO** — venda/serviço ao cliente gera uma **Conta a Receber** (`AReceber`): direito de receber, com valor e vencimento.
+
+**MEIO** — cobrança; se passar do vencimento sem receber → **inadimplência** (relatório + alerta por job).
+
+**FIM** — **Recebimento** (total/parcial): status → `Recebida`/`ParcialmenteRecebida`. Dispara automático:
+- **Lançamento contábil** `D Bancos / C Receitas`;
+- entrada no **Fluxo de Caixa**;
+- **Conciliação** confirma a entrada no extrato.
+
+**Exceção:** cancelar a conta recebida **reverte o lançamento contábil** do recebimento.
+
+---
+
+### Processos CÍCLICOS (o que se repete sempre)
+
+| Ciclo | Periodicidade | O que acontece | Onde no sistema |
+|---|---|---|---|
+| **Contas recorrentes/parceladas** | mensal | aluguel, assinaturas, parcelas geram novas contas a cada período | Contas a Pagar → Parcelar |
+| **Marcar vencidas** | diário | job varre contas e marca `Vencida`, recalcula juros/multa | Jobs (Hangfire) |
+| **Alertas** | diário | avisa contas a vencer/inadimplência (sininho + canais fake) | Notificações |
+| **Retry bancário** | minutos | reprocessa pagamentos que falharam | Jobs + Integração bancária |
+| **Conciliação** | diária/semanal | importa extrato e casa AP/AR | Conciliação bancária |
+| **Fechamento contábil** | mensal | gera **Balancete** (D=C) e **DRE** (Receitas − Despesas = resultado) | Contabilidade |
+
+> **A grande engrenagem:** todo dia entram/saem obrigações → o caixa é atualizado → ao fim do mês o **Balancete fecha** e a **DRE diz se houve lucro ou prejuízo**. No mês seguinte o ciclo recomeça com as recorrentes. É esse **loop** que um ERP financeiro automatiza.
+
+### Mapa rápido: cada etapa → onde mexer no código
+
+| Etapa do fluxo | Módulo/Arquivo |
+|---|---|
+| Gerar obrigação | `Compras` → `ContaPagarService` |
+| Aprovar | `AprovacaoService` + `RegraAprovacao` (alçadas) |
+| Vencer/juros | `JurosMultaService` + job de vencidas |
+| Pagar (baixa) | `ContasController.Baixar` → `PagamentoService` |
+| Registrar contábil | `ContabilidadeService.LancarPagamentoAsync` (auto) |
+| Estornar | `ContasController.Estornar` → `EstornarPagamentoAsync` |
+| Conciliar | `ConciliacaoService.ImportarCsvAsync` |
+| Fechar mês | `ContabilidadeService.BalanceteAsync` / `DreAsync` |
 
 ## 5. Regras de negócio implementadas
 
