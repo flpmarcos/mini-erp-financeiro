@@ -167,9 +167,9 @@ public class ChatService : IChatService
         if (msg is null) return OperationResult.Falha("Mensagem nao encontrada.");
         if (msg.Autor != usuario) return OperationResult.Falha("So o autor pode excluir a propria mensagem.");
 
-        // Regra: nunca apaga fisicamente — sempre soft delete (especialmente se vinculada a pagamento).
+        // Soft delete: marca como excluída mas PRESERVA o texto original (auditabilidade,
+        // especialmente para mensagens vinculadas a pagamento). A UI esconde o conteúdo.
         msg.Excluida = true;
-        msg.Texto = "(mensagem removida)";
         await _db.SaveChangesAsync();
         return OperationResult.Ok();
     }

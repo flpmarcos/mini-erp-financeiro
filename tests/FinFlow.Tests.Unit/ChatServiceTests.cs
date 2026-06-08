@@ -93,8 +93,9 @@ public class ChatServiceTests
         await svc.ExcluirMensagemAsync(msg.Id, "ana@demo.com");
 
         var noBanco = await db.ChatMensagens.FindAsync(msg.Id);
-        noBanco.Should().NotBeNull();            // ainda existe fisicamente
-        noBanco!.Excluida.Should().BeTrue();     // soft delete
+        noBanco.Should().NotBeNull();              // ainda existe fisicamente
+        noBanco!.Excluida.Should().BeTrue();       // soft delete
+        noBanco.Texto.Should().Be("pagamento ok"); // texto PRESERVADO (auditabilidade)
     }
 
     [Fact]

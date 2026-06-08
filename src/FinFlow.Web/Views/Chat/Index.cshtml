@@ -77,9 +77,11 @@ function esc(s){ const d=document.createElement('div'); d.textContent=s; return 
 function addMsg(m){
   const div = document.createElement('div');
   div.className = 'msg' + (m.excluida ? ' msg--del' : '');
+  // Mensagem excluída: esconde o conteúdo na UI (o texto fica preservado no banco para auditoria).
+  const corpo = m.excluida ? '<em>(mensagem removida)</em>' : esc(m.texto);
   div.innerHTML = `<div class="msg__meta"><span class="badge bg-secondary">${esc(m.autorArea)}</span> <strong>${esc(m.autor)}</strong>
       <span class="text-muted">${new Date(m.criadoEm).toLocaleString('pt-BR')}</span>${m.fixada?' 📌':''}</div>
-      <div class="msg__txt">${esc(m.texto)}</div>`;
+      <div class="msg__txt">${corpo}</div>`;
   elMsgs.appendChild(div);
   elMsgs.scrollTop = elMsgs.scrollHeight;
 }
