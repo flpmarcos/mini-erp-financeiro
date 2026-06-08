@@ -32,9 +32,12 @@ public class DashboardService : IDashboardService
                 .Where(c => c.Status == StatusConta.Vencida)
                 .SumAsync(c => (decimal?)(c.ValorLiquido - c.ValorPago)) ?? 0m,
 
+            // Soma as BAIXAS efetuadas no mês (não o ValorPago acumulado da conta) —
+            // evita superestimar quando há pagamento parcial em meses diferentes.
             TotalPagoMes = await contas
-                .Where(c => c.DataPagamento >= inicioMes && c.DataPagamento <= fimMes)
-                .SumAsync(c => (decimal?)c.ValorPago) ?? 0m,
+                .SelectMany(c => c.Baixas)
+                .Where(b => b.DataPagamento >= inicioMes && b.DataPagamento <= fimMes)
+                .SumAsync(b => (decimal?)b.ValorPago) ?? 0m,
 
             TotalPendente = await contas
                 .Where(c => c.Status == StatusConta.Pendente)
