@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/ContasAPagar.Web/wwwroot/favicon.svg" width="72" alt="FinFlow">
+  <img src="src/FinFlow.Web/wwwroot/favicon.svg" width="72" alt="FinFlow">
 </p>
 
 <h1 align="center">FinFlow — Mini-ERP Financeiro</h1>
@@ -226,7 +226,7 @@ dotnet build              # compilar
 O provider padrão é **InMemory**: a aplicação cria o schema em memória e roda o **seed** automaticamente. Não precisa de Docker nem banco.
 
 ```bash
-cd src/ContasAPagar.Web
+cd src/FinFlow.Web
 dotnet run
 ```
 Abra a URL exibida no console (algo como `http://localhost:5063`).
@@ -234,10 +234,10 @@ Abra a URL exibida no console (algo como `http://localhost:5063`).
 ### Opção B — com Docker (Oracle)
 ```bash
 docker compose up -d                       # sobe Oracle (aguarde ~1-3 min no 1o boot)
-# edite src/ContasAPagar.Web/appsettings.json:
+# edite src/FinFlow.Web/appsettings.json:
 #   Database:Provider = "Oracle"
 #   ConnectionStrings:Default = "User Id=appuser;Password=AppUser123;Data Source=localhost:1521/FREEPDB1;"
-cd src/ContasAPagar.Web
+cd src/FinFlow.Web
 dotnet run
 docker compose down                        # parar o banco
 ```
@@ -258,7 +258,7 @@ Tudo é controlado por **`appsettings.json`**:
 **Connection strings de exemplo**
 ```text
 Oracle:     User Id=appuser;Password=AppUser123;Data Source=localhost:1521/FREEPDB1;
-SqlServer:  Server=localhost,1433;Database=ContasAPagar;User Id=sa;Password=Your_password123;TrustServerCertificate=True;
+SqlServer:  Server=localhost,1433;Database=FinFlow;User Id=sa;Password=Your_password123;TrustServerCertificate=True;
 ```
 
 > ⚠️ **Segurança:** não comite senhas reais. Em produção use variáveis de ambiente / user-secrets:
@@ -281,7 +281,7 @@ Com **InMemory** o schema é criado via `EnsureCreated()` e **não precisa de mi
 
 Para bancos relacionais (Oracle/SQL Server), gere migrations:
 ```bash
-cd src/ContasAPagar.Web
+cd src/FinFlow.Web
 dotnet tool install --global dotnet-ef       # se ainda não tiver
 dotnet ef migrations add InitialCreate
 dotnet ef database update
@@ -309,9 +309,9 @@ No startup, a aplicação aplica migrations automaticamente se existirem (senão
 
 ## 12. Como debugar
 
-**Visual Studio:** abra `ContasAPagar.sln`, defina `ContasAPagar.Web` como startup, F5. Coloque breakpoints nos Services (ex.: `PagamentoService.BaixarAsync`, `AprovacaoService.EnviarParaAprovacaoAsync`).
+**Visual Studio:** abra `FinFlow.sln`, defina `FinFlow.Web` como startup, F5. Coloque breakpoints nos Services (ex.: `PagamentoService.BaixarAsync`, `AprovacaoService.EnviarParaAprovacaoAsync`).
 
-**VS Code:** abra a pasta, instale o C# Dev Kit, `F5` (gera `launch.json`). Ou rode `dotnet watch run` em `src/ContasAPagar.Web` para hot reload.
+**VS Code:** abra a pasta, instale o C# Dev Kit, `F5` (gera `launch.json`). Ou rode `dotnet watch run` em `src/FinFlow.Web` para hot reload.
 
 Pontos interessantes para breakpoint:
 - `Services/ContaPagarService.cs` → criação, edição, parcelamento, retenção.
@@ -347,11 +347,11 @@ Data;Descricao;Valor;Documento;Banco;Tipo
 ## 14. Estrutura de pastas
 
 ```
-05-contas-a-pagar-net8/
+mini-erp-financeiro/
 ├── docker-compose.yml            # Oracle (e SQL Server comentado)
 ├── data/extrato-exemplo.csv      # extrato fake para conciliação
-├── ContasAPagar.sln
-└── src/ContasAPagar.Web/
+├── FinFlow.sln
+└── src/FinFlow.Web/
     ├── Program.cs                # DI, provider do banco, seed, pipeline
     ├── appsettings.json          # Provider, connection strings, Financeiro
     ├── Domain/
@@ -445,23 +445,23 @@ Ajuste os limites em `appsettings → Financeiro` ou evolua `AprovacaoService.De
 ### Estrutura de testes
 ```
 tests/
-├── AccountsPayable.Tests.Unit          # xUnit + Moq + FluentAssertions (regra de negócio pura)
-├── AccountsPayable.Tests.Integration   # WebApplicationFactory + Testcontainers Oracle (pipeline real)
-└── AccountsPayable.Tests.E2E           # Playwright (usuário real no navegador)
+├── FinFlow.Tests.Unit          # xUnit + Moq + FluentAssertions (regra de negócio pura)
+├── FinFlow.Tests.Integration   # WebApplicationFactory + Testcontainers Oracle (pipeline real)
+└── FinFlow.Tests.E2E           # Playwright (usuário real no navegador)
 ```
 
 ### Como rodar os testes
 ```bash
 # Unitários (rápidos, sem dependências externas) — 83 testes
-dotnet test tests/AccountsPayable.Tests.Unit
+dotnet test tests/FinFlow.Tests.Unit
 
 # Integração (sobe Oracle efêmero via Testcontainers — EXIGE Docker rodando)
-dotnet test tests/AccountsPayable.Tests.Integration
+dotnet test tests/FinFlow.Tests.Integration
 
 # E2E (precisa da app no ar + browser do Playwright)
-dotnet run --project src/ContasAPagar.Web --urls http://localhost:5080 &   # 1) sobe a app
-pwsh tests/AccountsPayable.Tests.E2E/bin/Debug/net8.0/playwright.ps1 install chromium  # 2) browser (1x)
-E2E_BASE_URL=http://localhost:5080 dotnet test tests/AccountsPayable.Tests.E2E         # 3) roda E2E
+dotnet run --project src/FinFlow.Web --urls http://localhost:5080 &   # 1) sobe a app
+pwsh tests/FinFlow.Tests.E2E/bin/Debug/net8.0/playwright.ps1 install chromium  # 2) browser (1x)
+E2E_BASE_URL=http://localhost:5080 dotnet test tests/FinFlow.Tests.E2E         # 3) roda E2E
 
 # Relatório de testes (.trx) + cobertura
 dotnet test --logger "trx" --collect:"XPlat Code Coverage"
@@ -480,7 +480,7 @@ dotnet test --logger "trx" --collect:"XPlat Code Coverage"
 > **Onde adicionar testes de cada módulo:** espelhe a pasta `Services/`. Cada novo Service ganha um `XServiceTests.cs`. Use `TestSupport.NewDb()` (AppDbContext InMemory isolado) e `Moq` para `IAuditoriaService`/integrações.
 
 ### Observabilidade
-- **Serilog** — logs estruturados em console + arquivo (`logs/contas-a-pagar-*.log`). Config em `Program.cs`.
+- **Serilog** — logs estruturados em console + arquivo (`logs/finflow-*.log`). Config em `Program.cs`.
 - **CorrelationId** — `CorrelationIdMiddleware` injeta um id por request (header `X-Correlation-ID`) em todos os logs do fluxo.
 - **Request logging** — `UseSerilogRequestLogging` resume cada request (rota, status, tempo).
 - **Health checks** — `GET /health` (máquina) + página **`/Status`** (humana: saúde, ambiente, banco, versão, uptime).
@@ -521,16 +521,16 @@ A solução está dividida em **4 projetos** com direção de dependência impos
 
 ```
 src/
-├── ContasAPagar.Domain/           # Entities, Enums, Identity, Helpers (OperationResult/Paged/Validator), Configurations
-├── ContasAPagar.Infrastructure/   # Data (EF/DbContext/Seed), Integrations, Repositories, Infra (jobs/tenancy/observability)  → ref Domain
-├── ContasAPagar.Application/       # Services + Interfaces, ViewModels, Jobs                                                  → ref Infrastructure, Domain
-└── ContasAPagar.Web/              # Controllers, Api, Views, ViewComponents, Program, wwwroot                                 → ref Application
+├── FinFlow.Domain/           # Entities, Enums, Identity, Helpers (OperationResult/Paged/Validator), Configurations
+├── FinFlow.Infrastructure/   # Data (EF/DbContext/Seed), Integrations, Repositories, Infra (jobs/tenancy/observability)  → ref Domain
+├── FinFlow.Application/       # Services + Interfaces, ViewModels, Jobs                                                  → ref Infrastructure, Domain
+└── FinFlow.Web/              # Controllers, Api, Views, ViewComponents, Program, wwwroot                                 → ref Application
 tests/
-├── AccountsPayable.Tests.Unit / .Integration / .E2E
+├── FinFlow.Tests.Unit / .Integration / .E2E
 ```
 
 Fluxo: **Web → Application → Infrastructure → Domain** (Domain não depende de ninguém).
-> Os namespaces foram mantidos como `ContasAPagar.Web.*` para preservar compatibilidade; o que muda é o **assembly** (camada) onde cada tipo vive e a **direção de dependência** entre projetos.
+> Os namespaces foram mantidos como `FinFlow.Web.*` para preservar compatibilidade; o que muda é o **assembly** (camada) onde cada tipo vive e a **direção de dependência** entre projetos.
 
 ### Novos módulos no menu
 **Compras** (solicitação→pedido→recebimento), **Contas a Receber**, **Clientes**, **Fluxo de Caixa**, **CNAB**, **Notificações** (sininho no topo), e para **Admin**: **Regras de Aprovação**, **API (Swagger)**, **Jobs (Hangfire)**. Conta a pagar tem **anexos** e **estorno** nos detalhes.
@@ -614,9 +614,9 @@ Breakpoints: `DocumentIngestionService.IngerirBaseAsync` (o que é indexado), `P
 
 ### Testar
 ```bash
-dotnet test tests/AccountsPayable.Tests.Unit   # inclui ChatServiceTests e RagTests
+dotnet test tests/FinFlow.Tests.Unit   # inclui ChatServiceTests e RagTests
 ```
-Cobertura: criar/enviar/histórico/lida no chat, bloqueio sem permissão, vínculo a conta, menção notifica, soft delete; RAG com/sem contexto, isolamento multiempresa, permissão Diretoria, ingestão, embeddings, busca vetorial, fontes, mascaramento, auditoria. E2E (Playwright): chat ao vivo (SignalR) e pergunta ao assistente — ver `tests/AccountsPayable.Tests.E2E`.
+Cobertura: criar/enviar/histórico/lida no chat, bloqueio sem permissão, vínculo a conta, menção notifica, soft delete; RAG com/sem contexto, isolamento multiempresa, permissão Diretoria, ingestão, embeddings, busca vetorial, fontes, mascaramento, auditoria. E2E (Playwright): chat ao vivo (SignalR) e pergunta ao assistente — ver `tests/FinFlow.Tests.E2E`.
 
 ---
 
@@ -626,7 +626,7 @@ Distribuído sob a licença **MIT** — use, copie, modifique e estude à vontad
 
 ## 🤝 Contribuindo
 
-Repo de estudo, PRs e issues bem-vindos. Antes de abrir PR: `dotnet build` e `dotnet test tests/AccountsPayable.Tests.Unit` devem passar. Ao adicionar um Service, espelhe um `XServiceTests.cs`.
+Repo de estudo, PRs e issues bem-vindos. Antes de abrir PR: `dotnet build` e `dotnet test tests/FinFlow.Tests.Unit` devem passar. Ao adicionar um Service, espelhe um `XServiceTests.cs`.
 
 ---
 

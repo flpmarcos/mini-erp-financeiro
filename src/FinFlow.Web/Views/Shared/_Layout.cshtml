@@ -1,0 +1,209 @@
+@using FinFlow.Domain.Identity
+@{
+    var ctrl = (ViewContext.RouteData.Values["controller"] as string ?? "").ToLower();
+    string active(string c) => ctrl == c.ToLower() ? "active" : "";
+    bool podeAprovar = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Gerente) || User.IsInRole(Roles.Diretor);
+    bool podeCadastrar = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Financeiro);
+    var nome = User.Identity?.Name ?? "—";
+    var iniciais = (nome.Length >= 2 ? nome[..2] : nome).ToUpper();
+    var papel = Roles.Todos.FirstOrDefault(User.IsInRole) ?? "Usuário";
+    bool isAdmin = User.IsInRole(Roles.Admin);
+}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · FinFlow</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app">
+        <!-- ============================== Sidebar ============================== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar__brand">
+                <span class="logo">
+                    <svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true">
+                        <path d="M11 31 C18 31 19 19 26 19 C31 19 32 25 37 25" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+                        <path d="M33 22.5 L37 25 L34.5 29" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="13" cy="17" r="3.4" fill="#fff"/>
+                    </svg>
+                </span>
+                <span>FinFlow<small>Mini-ERP Financeiro</small></span>
+            </div>
+            <nav class="sidebar__nav">
+                <div class="sidebar__section">Operação</div>
+                <a class="nav-link-app @active("Dashboard")" asp-controller="Dashboard" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                    Dashboard
+                </a>
+                <a class="nav-link-app @active("Compras")" asp-controller="Compras" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    Compras
+                </a>
+                <a class="nav-link-app @active("Contas")" asp-controller="Contas" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>
+                    Contas a Pagar
+                </a>
+                @if (podeAprovar)
+                {
+                    <a class="nav-link-app @active("Aprovacoes")" asp-controller="Aprovacoes" asp-action="Index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Aprovações
+                    </a>
+                }
+                <a class="nav-link-app @active("ContasReceber")" asp-controller="ContasReceber" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M5 8l7-7 7 7"/><path d="M5 16h14"/></svg>
+                    Contas a Receber
+                </a>
+                @if (podeCadastrar)
+                {
+                    <a class="nav-link-app @active("Cnab")" asp-controller="Cnab" asp-action="Index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+                        CNAB
+                    </a>
+                }
+                <a class="nav-link-app @active("Conciliacao")" asp-controller="Conciliacao" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    Conciliação
+                </a>
+
+                <a class="nav-link-app @active("Chat")" asp-controller="Chat" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Chat Interno
+                </a>
+                <a class="nav-link-app @active("ChatRag")" asp-controller="ChatRag" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4.5 3 5.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3c1.8-1.2 3-3.3 3-5.7a7 7 0 0 0-7-7z"/><path d="M9 21h6"/></svg>
+                    Assistente IA
+                </a>
+
+                <div class="sidebar__section">Cadastros</div>
+                <a class="nav-link-app @active("Fornecedores")" asp-controller="Fornecedores" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Fornecedores
+                </a>
+                <a class="nav-link-app @active("Clientes")" asp-controller="Clientes" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    Clientes
+                </a>
+                @if (podeCadastrar)
+                {
+                    <a class="nav-link-app @active("Cadastros")" asp-controller="Cadastros" asp-action="Index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+                        Categorias & Centros
+                    </a>
+                }
+
+                <div class="sidebar__section">Análise</div>
+                <a class="nav-link-app @active("FluxoCaixa")" asp-controller="FluxoCaixa" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Fluxo de Caixa
+                </a>
+                <a class="nav-link-app @active("Relatorios")" asp-controller="Relatorios" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-5"/></svg>
+                    Relatórios
+                </a>
+                <a class="nav-link-app @active("Auditoria")" asp-controller="Auditoria" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>
+                    Auditoria
+                </a>
+                <a class="nav-link-app @active("Status")" asp-controller="Status" asp-action="Index">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Status
+                </a>
+                @if (isAdmin)
+                {
+                    <a class="nav-link-app @active("RegrasAprovacao")" asp-controller="RegrasAprovacao" asp-action="Index">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+                        Regras de Aprovação
+                    </a>
+                    <a class="nav-link-app" href="/swagger" target="_blank">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        API (Swagger)
+                    </a>
+                    <a class="nav-link-app" href="/hangfire" target="_blank">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Jobs (Hangfire)
+                    </a>
+                }
+            </nav>
+            <div class="sidebar__foot">
+                <span class="avatar">@iniciais</span>
+                <div class="flex-grow-1" style="min-width:0">
+                    <div class="text-truncate" style="color:#e2e8f0;font-size:.82rem">@nome</div>
+                    <div style="color:var(--c-text-faint);font-size:.72rem">@papel</div>
+                </div>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm btn-outline-secondary" title="Sair" style="padding:.2rem .45rem">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- ============================== Main ================================ -->
+        <div class="main">
+            <header class="topbar">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Abrir menu">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                    </button>
+                    <div>
+                        <div class="topbar__title">@(ViewData["Title"] ?? "Painel")</div>
+                        <div class="topbar__crumb">Sistema de Contas a Pagar</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    @await Component.InvokeAsync("NotificacoesBell")
+                    <a class="btn btn-primary btn-sm" asp-controller="Contas" asp-action="Create">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-3px"><path d="M12 5v14M5 12h14"/></svg>
+                        Nova Conta
+                    </a>
+                </div>
+            </header>
+
+            <main class="content">
+                @if (TempData["Sucesso"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["Sucesso"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                }
+                @if (TempData["Erro"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["Erro"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                }
+                @RenderBody()
+            </main>
+
+            <footer class="footer-note">
+                Projeto didático · ASP.NET Core MVC · EF Core · Oracle / SQL Server
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // Tema global dos gráficos (Chart.js) alinhado ao design system.
+        if (window.Chart) {
+            Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+            Chart.defaults.color = '#475569';
+            Chart.defaults.plugins.legend.labels.boxWidth = 12;
+            window.CAP_COLORS = ['#4f46e5','#f59e0b','#0891b2','#059669','#dc2626','#7c3aed','#db2777','#475569'];
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

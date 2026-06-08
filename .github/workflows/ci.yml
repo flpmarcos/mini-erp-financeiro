@@ -11,7 +11,7 @@ on:
 
 env:
   DOTNET_VERSION: "8.0.x"
-  SOLUTION: ContasAPagar.sln
+  SOLUTION: FinFlow.sln
 
 defaults:
   run:
@@ -30,7 +30,7 @@ jobs:
       - name: Build
         run: dotnet build $SOLUTION -c Release --no-restore
       - name: Unit tests
-        run: dotnet test tests/AccountsPayable.Tests.Unit -c Release --no-build --logger "trx" --results-directory TestResults
+        run: dotnet test tests/FinFlow.Tests.Unit -c Release --no-build --logger "trx" --results-directory TestResults
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -47,7 +47,7 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Integration tests (Testcontainers Oracle)
-        run: dotnet test tests/AccountsPayable.Tests.Integration -c Release --logger "trx" --results-directory TestResults
+        run: dotnet test tests/FinFlow.Tests.Integration -c Release --logger "trx" --results-directory TestResults
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -63,13 +63,13 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Publish app
-        run: dotnet build src/ContasAPagar.Web -c Release
+        run: dotnet build src/FinFlow.Web -c Release
       - name: Install Playwright browsers
         run: |
-          dotnet build tests/AccountsPayable.Tests.E2E -c Release
-          pwsh tests/AccountsPayable.Tests.E2E/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+          dotnet build tests/FinFlow.Tests.E2E -c Release
+          pwsh tests/FinFlow.Tests.E2E/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
       - name: Start app (InMemory) and run E2E
         run: |
-          ASPNETCORE_URLS=http://localhost:5080 dotnet run --project src/ContasAPagar.Web -c Release --no-build &
+          ASPNETCORE_URLS=http://localhost:5080 dotnet run --project src/FinFlow.Web -c Release --no-build &
           npx --yes wait-on http://localhost:5080/health || sleep 20
-          E2E_BASE_URL=http://localhost:5080 dotnet test tests/AccountsPayable.Tests.E2E -c Release --no-build
+          E2E_BASE_URL=http://localhost:5080 dotnet test tests/FinFlow.Tests.E2E -c Release --no-build

@@ -7,15 +7,15 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copia os csproj de todas as camadas primeiro para aproveitar cache de restore.
-COPY src/ContasAPagar.Domain/ContasAPagar.Domain.csproj src/ContasAPagar.Domain/
-COPY src/ContasAPagar.Infrastructure/ContasAPagar.Infrastructure.csproj src/ContasAPagar.Infrastructure/
-COPY src/ContasAPagar.Application/ContasAPagar.Application.csproj src/ContasAPagar.Application/
-COPY src/ContasAPagar.Web/ContasAPagar.Web.csproj src/ContasAPagar.Web/
-RUN dotnet restore src/ContasAPagar.Web/ContasAPagar.Web.csproj
+COPY src/FinFlow.Domain/FinFlow.Domain.csproj src/FinFlow.Domain/
+COPY src/FinFlow.Infrastructure/FinFlow.Infrastructure.csproj src/FinFlow.Infrastructure/
+COPY src/FinFlow.Application/FinFlow.Application.csproj src/FinFlow.Application/
+COPY src/FinFlow.Web/FinFlow.Web.csproj src/FinFlow.Web/
+RUN dotnet restore src/FinFlow.Web/FinFlow.Web.csproj
 
 # Copia o restante e publica.
 COPY src/ src/
-RUN dotnet publish src/ContasAPagar.Web/ContasAPagar.Web.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish src/FinFlow.Web/FinFlow.Web.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # ----------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
@@ -24,4 +24,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 COPY --from=build /app/publish ./
-ENTRYPOINT ["dotnet", "ContasAPagar.Web.dll"]
+ENTRYPOINT ["dotnet", "FinFlow.Web.dll"]
