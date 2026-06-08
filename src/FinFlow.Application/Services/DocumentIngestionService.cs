@@ -25,6 +25,10 @@ public class DocumentIngestionService : IDocumentIngestionService
 
     public async Task<int> IngerirBaseAsync()
     {
+        // Reindex idempotente: limpa o índice antes de reingerir (evita duplicação
+        // de trechos a cada reindexação / restart).
+        await _store.ClearAsync();
+
         var docs = new List<VectorDocument>();
 
         // Contas a pagar (exclui conta-mãe de parcelamento).

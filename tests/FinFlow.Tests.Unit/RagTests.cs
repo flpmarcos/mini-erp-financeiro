@@ -52,6 +52,15 @@ public class RagTests
     }
 
     [Fact]
+    public async Task Reindexar_NaoDuplica()
+    {
+        var (_, ingest, store, _) = await BuildAsync();
+        var apos1 = await store.CountAsync();
+        await ingest.IngerirBaseAsync();           // reindexa
+        (await store.CountAsync()).Should().Be(apos1, "reindex deve substituir, não duplicar");
+    }
+
+    [Fact]
     public async Task Pergunta_ComContexto_RetornaRespostaEFontes()
     {
         var (rag, _, _, _) = await BuildAsync();
