@@ -12,7 +12,8 @@ namespace FinFlow.Integrations.Banking;
 public abstract class FakeBankPaymentService : IBankPaymentService
 {
     private readonly ILogger _logger;
-    private static readonly Random _rnd = new();
+    // Random.Shared é thread-safe — evita corrupção do gerador em pagamentos concorrentes.
+    private static readonly Random _rnd = Random.Shared;
 
     protected FakeBankPaymentService(ILogger logger) => _logger = logger;
 
