@@ -14,7 +14,7 @@
 ![Tests](https://img.shields.io/badge/tests-93%20passing-2ea44f)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-**Mini-ERP financeiro** construído com **ASP.NET Core MVC + Entity Framework Core**, partindo de um módulo de **Contas a Pagar** e evoluindo para um sistema corporativo brasileiro completo: Contas a Receber, Fluxo de Caixa, Compras, aprovações por alçada configuráveis, integração bancária (fake) com webhooks/estorno, CNAB, conciliação, anexos, auditoria, multiempresa, **chat interno em tempo real (SignalR)** e **assistente de IA com RAG**.
+**Mini-ERP financeiro** construído com **ASP.NET Core MVC + Entity Framework Core**, partindo de um módulo de **Contas a Pagar** e evoluindo para um sistema corporativo brasileiro completo: Contas a Receber, Fluxo de Caixa, Compras, **Contabilidade** (plano de contas + lançamento por partida dobrada, Balancete/Razão/DRE com lançamento automático), aprovações por alçada configuráveis, integração bancária (fake) com webhooks/estorno, CNAB, conciliação de extrato (AP e AR), anexos, auditoria, multiempresa, **chat interno em tempo real (SignalR)** e **assistente de IA com RAG**.
 
 > 🎓 **Projeto 100% didático.** Feito para **estudar, debugar, quebrar, corrigir e evoluir** .NET MVC, EF Core, arquitetura limpa, regras financeiras, testes, frontend e IA. **Não use em produção** — dados, usuários, integrações bancárias, banco e provedor de IA são **fake/seed** (ver [Aviso](#-aviso)).
 
