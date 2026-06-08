@@ -1,0 +1,44 @@
+# DEV LOCAL — banco Oracle + app (para desenvolvimento/estudo).
+# Para DEPLOY (Coolify/produção) use o docker-compose.yml na raiz.
+#
+#   docker compose -f docker-compose.dev.yml up -d --build
+#   docker compose -f docker-compose.dev.yml down -v   # para e APAGA os dados
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    container_name: finflow-oracle
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: Oracle123
+      APP_USER: appuser
+      APP_USER_PASSWORD: AppUser123
+    volumes:
+      - finflow_oracle:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finflow-app
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__Provider: Oracle
+      ConnectionStrings__Default: "User Id=appuser;Password=AppUser123;Data Source=oracle:1521/FREEPDB1;"
+    depends_on:
+      oracle:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  finflow_oracle:
+    name: finflow-oracle-data

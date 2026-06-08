@@ -1,64 +1,68 @@
-# Banco de dados para o sistema de Contas a Pagar.
-# Oracle Free 23 (primeira opcao). Para SQL Server, veja o servico comentado abaixo.
+# ============================================================================
+# FinFlow — deploy (Coolify / produção).
 #
-#   docker compose up -d        # sobe o banco
-#   docker compose down         # para o banco
-#   docker compose down -v      # para e APAGA os dados
+# Por padrão roda com banco EM MEMÓRIA (InMemory): zero dependência, sobe em
+# qualquer VPS, mas os dados RESETAM a cada restart/redeploy (ideal p/ demo).
+#
+# Para PERSISTIR os dados, descomente o serviço `sqlserver` abaixo e ajuste as
+# variáveis (DATABASE_PROVIDER=SqlServer + CONNECTION_STRING). Exige ~2 GB RAM.
+#
+# No Coolify:
+#   1. New Resource → Docker Compose → aponte para este repositório.
+#   2. Porta exposta = 8080 (o app escuta em http://+:8080).
+#   3. Defina as variáveis de ambiente (ver .env.example) nas Settings do app.
+#   4. Coolify cuida do domínio + HTTPS (Traefik) — o app já trata X-Forwarded-*.
+# ============================================================================
 services:
-  oracle:
-    image: gvenzl/oracle-free:23-slim-faststart
-    container_name: contas-pagar-oracle
-    ports:
-      - "1521:1521"
-    environment:
-      ORACLE_PASSWORD: Oracle123          # senha do SYS/SYSTEM
-      APP_USER: appuser                   # usuario da aplicacao
-      APP_USER_PASSWORD: AppUser123       # senha do usuario da aplicacao
-    volumes:
-      - contas_pagar_oracle:/opt/oracle/oradata
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 300s
-    restart: unless-stopped
-
-  # Aplicacao web (build do Dockerfile). Sobe junto com o Oracle.
-  #   docker compose up -d --build app
-  # Acesse: http://localhost:8080
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: contas-pagar-app
-    ports:
-      - "8080:8080"
+    restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      Database__Provider: Oracle
-      ConnectionStrings__Default: "User Id=appuser;Password=AppUser123;Data Source=oracle:1521/FREEPDB1;"
-    depends_on:
-      oracle:
-        condition: service_healthy
-    restart: unless-stopped
+      ASPNETCORE_URLS: "http://+:8080"
+      # InMemory (default) | SqlServer | Oracle
+      Database__Provider: "${DATABASE_PROVIDER:-InMemory}"
+      ConnectionStrings__Default: "${CONNECTION_STRING:-}"
+      Jobs__Enabled: "true"
+      # TROQUE este token no Coolify (Settings → Environment Variables).
+      Bank__WebhookToken: "${BANK_WEBHOOK_TOKEN:-troque-este-token}"
+    expose:
+      - "8080"            # Coolify/Traefik conecta nesta porta interna
+    volumes:
+      - finflow_uploads:/app/uploads
+      - finflow_logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    # depends_on:           # descomente ao usar o sqlserver abaixo
+    #   sqlserver:
+    #     condition: service_healthy
 
-  # ---------------------------------------------------------------------------
-  # Alternativa: SQL Server (descomente e ajuste Database:Provider=SqlServer).
-  # ---------------------------------------------------------------------------
+  # ---- Persistência opcional (SQL Server) — descomente para dados permanentes ----
+  # Lembre de setar no Coolify:
+  #   DATABASE_PROVIDER=SqlServer
+  #   CONNECTION_STRING=Server=sqlserver,1433;Database=FinFlow;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
   # sqlserver:
   #   image: mcr.microsoft.com/mssql/server:2022-latest
-  #   container_name: contas-pagar-sqlserver
-  #   ports:
-  #     - "1433:1433"
+  #   restart: unless-stopped
   #   environment:
   #     ACCEPT_EULA: "Y"
-  #     MSSQL_SA_PASSWORD: "Your_password123"
+  #     MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?defina uma senha forte no Coolify}"
   #   volumes:
-  #     - contas_pagar_sqlserver:/var/opt/mssql
+  #     - finflow_mssql:/var/opt/mssql
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -No -Q 'SELECT 1' || exit 1"]
+  #     interval: 15s
+  #     timeout: 5s
+  #     retries: 20
+  #     start_period: 60s
 
 volumes:
-  contas_pagar_oracle:
-    name: contas-pagar-oracle-data
-  # contas_pagar_sqlserver:
-  #   name: contas-pagar-sqlserver-data
+  finflow_uploads:
+  finflow_logs:
+  # finflow_mssql:

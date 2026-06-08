@@ -1,7 +1,6 @@
 # ============================================================================
-# Build multi-stage da aplicacao Contas a Pagar (.NET 8).
-# Contexto de build = raiz do projeto (05-contas-a-pagar-net8).
-#   docker build -t contas-a-pagar .
+# FinFlow — build multi-stage (.NET 8). Contexto de build = raiz do repositório.
+#   docker build -t finflow .
 # ============================================================================
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
@@ -20,8 +19,17 @@ RUN dotnet publish src/FinFlow.Web/FinFlow.Web.csproj -c Release -o /app/publish
 # ----------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
+
+# curl: usado pelo HEALTHCHECK do docker-compose (/health).
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
+
+# Pastas de runtime (anexos/logs) — montadas como volumes no compose.
+RUN mkdir -p /app/uploads /app/logs
+
 COPY --from=build /app/publish ./
 ENTRYPOINT ["dotnet", "FinFlow.Web.dll"]

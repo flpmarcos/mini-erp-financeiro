@@ -219,8 +219,20 @@ using (var scope = app.Services.CreateScope())
 // ----------------------------------------------------------------------------
 // Pipeline HTTP.
 // ----------------------------------------------------------------------------
+
+// Atrás de um proxy reverso (Coolify/Traefik, Nginx...) que termina o TLS:
+// confia nos X-Forwarded-Proto/For para o app saber que a requisição é HTTPS.
 if (!app.Environment.IsDevelopment())
 {
+    var fwd = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
+    {
+        ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                         | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+    };
+    fwd.KnownNetworks.Clear();
+    fwd.KnownProxies.Clear();
+    app.UseForwardedHeaders(fwd);
+
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }

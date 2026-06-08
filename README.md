@@ -620,6 +620,37 @@ Cobertura: criar/enviar/histórico/lida no chat, bloqueio sem permissão, víncu
 
 ---
 
+## 🚀 Deploy (Coolify / Docker)
+
+O repositório já vem pronto para deploy:
+
+- **`Dockerfile`** — build multi-stage (.NET 8) + `curl` para healthcheck.
+- **`docker-compose.yml`** — produção/Coolify (app standalone, **InMemory** por padrão).
+- **`docker-compose.dev.yml`** — dev local com Oracle.
+- **`.env.example`** — variáveis de ambiente.
+
+### Coolify (passo a passo)
+1. **New Resource → Docker Compose** e aponte para este repositório (branch `main`).
+2. Coolify detecta o `docker-compose.yml`. Confirme a **porta `8080`** (o app escuta em `http://+:8080`).
+3. Em **Environment Variables**, defina (ver `.env.example`):
+   - `DATABASE_PROVIDER=InMemory` (ou `SqlServer`)
+   - `BANK_WEBHOOK_TOKEN=<um token forte>`
+   - *(se SqlServer)* `CONNECTION_STRING=Server=sqlserver,1433;Database=FinFlow;User Id=sa;Password=<senha>;TrustServerCertificate=True;` e `MSSQL_SA_PASSWORD=<senha>`
+4. Defina o **domínio** — Coolify provê o **HTTPS** (Traefik) automaticamente. O app já trata `X-Forwarded-Proto/For` atrás do proxy.
+5. **Deploy.** O healthcheck (`GET /health`) indica quando está pronto. Acesse e faça login com os usuários de seed (senha `Senha123!`).
+
+> ⚠️ Com `InMemory` os dados **resetam a cada redeploy/restart** (ótimo para demo). Para **persistir**, descomente o serviço `sqlserver` no `docker-compose.yml`, ajuste as variáveis acima (exige ~2 GB de RAM no host) e refaça o deploy. O schema é criado no startup (`EnsureCreated`) e o seed roda automaticamente.
+
+### Docker puro (sem Coolify)
+```bash
+docker compose up -d --build          # produção (InMemory) → http://localhost:8080  (via expose; publique a porta se quiser)
+docker compose -f docker-compose.dev.yml up -d --build   # dev com Oracle
+```
+
+> Em produção, **troque o `BANK_WEBHOOK_TOKEN`** e, se expor publicamente, considere remover/limitar os usuários de seed e o Swagger.
+
+---
+
 ## 📄 Licença
 
 Distribuído sob a licença **MIT** — use, copie, modifique e estude à vontade. Veja [`LICENSE`](LICENSE).
