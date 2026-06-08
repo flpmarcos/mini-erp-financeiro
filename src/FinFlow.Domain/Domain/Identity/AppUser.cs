@@ -32,8 +32,10 @@ public static class Policies
     public const string PodeAprovar = "PodeAprovar";
     /// <summary>Efetuar pagamento/baixa (Financeiro/Admin).</summary>
     public const string PodePagar = "PodePagar";
-    /// <summary>Ver relatorios/auditoria/dashboard (todos os perfis, inclui Auditor).</summary>
+    /// <summary>Ver relatorios/dashboard (todos os perfis, inclui Auditor).</summary>
     public const string PodeVisualizar = "PodeVisualizar";
+    /// <summary>Ver a trilha de auditoria (Auditor/Diretor/Admin).</summary>
+    public const string PodeAuditar = "PodeAuditar";
     /// <summary>Administracao do sistema (Admin).</summary>
     public const string Administrar = "Administrar";
 }

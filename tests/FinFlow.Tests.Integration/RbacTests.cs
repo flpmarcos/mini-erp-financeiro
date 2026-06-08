@@ -69,4 +69,18 @@ public class RbacTests : IClassFixture<InMemoryAuthFactory>
         var resp = await ClientComo("auditor@demo.com", "Auditor").GetAsync("/Relatorios");
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task Auditor_AcessaAuditoria()
+    {
+        var resp = await ClientComo("auditor@demo.com", "Auditor").GetAsync("/Auditoria");
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Financeiro_NaoAcessaAuditoria()
+    {
+        var resp = await ClientComo("financeiro@demo.com", "Financeiro").GetAsync("/Auditoria");
+        resp.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.Found, HttpStatusCode.Redirect);
+    }
 }

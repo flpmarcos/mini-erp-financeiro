@@ -91,6 +91,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
         AplicarFiltroTenant<RegraAprovacao>(modelBuilder);
         AplicarFiltroTenant<SolicitacaoCompra>(modelBuilder);
         AplicarFiltroTenant<ChatConversation>(modelBuilder);
+        AplicarFiltroTenant<AuditLog>(modelBuilder);
     }
 
     private void AplicarFiltroTenant<T>(ModelBuilder mb, bool soByPropriaEmpresa = false) where T : class

@@ -4,8 +4,11 @@ using FinFlow.Domain.Enums;
 namespace FinFlow.Domain.Entities;
 
 /// <summary>Trilha de auditoria: registra quem mudou o que e quando.</summary>
-public class AuditLog : BaseEntity
+public class AuditLog : BaseEntity, ITenantOwned
 {
+    /// <summary>Empresa (tenant) — isola a trilha de auditoria por empresa.</summary>
+    public int EmpresaId { get; set; } = 1;
+
     [StringLength(120)]
     public string Usuario { get; set; } = "sistema";
 

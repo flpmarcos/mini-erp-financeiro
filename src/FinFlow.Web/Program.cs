@@ -155,6 +155,9 @@ builder.Services.AddAuthorizationBuilder()
         FinFlow.Domain.Identity.Roles.Admin, FinFlow.Domain.Identity.Roles.Gerente,
         FinFlow.Domain.Identity.Roles.Diretor))
     .AddPolicy(FinFlow.Domain.Identity.Policies.PodeVisualizar, p => p.RequireAuthenticatedUser())
+    .AddPolicy(FinFlow.Domain.Identity.Policies.PodeAuditar, p => p.RequireRole(
+        FinFlow.Domain.Identity.Roles.Admin, FinFlow.Domain.Identity.Roles.Diretor,
+        FinFlow.Domain.Identity.Roles.Auditor))
     .AddPolicy(FinFlow.Domain.Identity.Policies.Administrar, p => p.RequireRole(
         FinFlow.Domain.Identity.Roles.Admin));
 

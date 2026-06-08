@@ -1,8 +1,11 @@
+using FinFlow.Domain.Identity;
 using FinFlow.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinFlow.Controllers;
 
+[Authorize(Policy = Policies.PodeAuditar)]
 public class AuditoriaController : BaseController
 {
     private readonly IAuditoriaService _auditoria;
