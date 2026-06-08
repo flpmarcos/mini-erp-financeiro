@@ -34,4 +34,8 @@ public interface IContabilidadeService
     // Lançamento automático (integração com o financeiro)
     Task LancarPagamentoAsync(int contaPagarId, decimal valor, string usuario);
     Task LancarRecebimentoAsync(int contaReceberId, decimal valor, string usuario);
+
+    // Estorno automático: gera lançamento de reversão (partidas invertidas).
+    Task EstornarPagamentoAsync(int contaPagarId, string usuario);
+    Task EstornarRecebimentoAsync(int contaReceberId, string usuario);
 }

@@ -69,6 +69,31 @@ public class ContabilidadeServiceTests
     }
 
     [Fact]
+    public async Task EstornarPagamento_GeraReversao_e_ZeraSaldo()
+    {
+        var (svc, db, _, _, _) = await BuildAsync();
+        await svc.LancarPagamentoAsync(contaPagarId: 42, valor: 500m, usuario: "fin");
+
+        await svc.EstornarPagamentoAsync(contaPagarId: 42, usuario: "fin");
+
+        (await db.Lancamentos.CountAsync()).Should().Be(2); // original + estorno
+        var dre = await svc.DreAsync();
+        dre.Despesas.Should().Be(0m); // pagamento revertido
+    }
+
+    [Fact]
+    public async Task EstornarPagamento_Idempotente_NaoDuplicaReversao()
+    {
+        var (svc, db, _, _, _) = await BuildAsync();
+        await svc.LancarPagamentoAsync(contaPagarId: 42, valor: 500m, usuario: "fin");
+
+        await svc.EstornarPagamentoAsync(42, "fin");
+        await svc.EstornarPagamentoAsync(42, "fin"); // 2a vez = no-op
+
+        (await db.Lancamentos.CountAsync()).Should().Be(2);
+    }
+
+    [Fact]
     public async Task Recebimento_ApareceNaDRE_e_BalanceteBate()
     {
         var (svc, _, _, _, _) = await BuildAsync();

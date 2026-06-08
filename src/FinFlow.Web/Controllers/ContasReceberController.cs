@@ -87,7 +87,13 @@ public class ContasReceberController : BaseController
     public async Task<IActionResult> Cancelar(int id)
     {
         var r = await _contas.CancelarAsync(id, UsuarioAtual);
-        if (r.Sucesso) Sucesso("Conta cancelada."); else Erro(r.Erro!);
+        if (r.Sucesso)
+        {
+            // Reverte o lançamento contábil do recebimento, se houver (no-op se nada foi recebido).
+            await _contabil.EstornarRecebimentoAsync(id, UsuarioAtual);
+            Sucesso("Conta cancelada.");
+        }
+        else Erro(r.Erro!);
         return RedirectToAction(nameof(Details), new { id });
     }
 

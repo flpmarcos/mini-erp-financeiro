@@ -71,7 +71,9 @@ public class ContabilidadeService : IContabilidadeService
             lanc.Partidas.Add(new PartidaContabil { ContaContabilId = p.ContaContabilId, Tipo = p.Tipo, Valor = p.Valor });
 
         _db.Lancamentos.Add(lanc);
-        await _auditoria.RegistrarAsync(AcaoAuditoria.Criacao, nameof(LancamentoContabil), 0,
+        await _db.SaveChangesAsync();
+        // Audit após o save: o Id já foi gerado.
+        await _auditoria.RegistrarAsync(AcaoAuditoria.Criacao, nameof(LancamentoContabil), lanc.Id,
             valorNovo: $"{vm.Historico} ({debitos:C})", usuario: usuario);
         await _db.SaveChangesAsync();
         return OperationResult<LancamentoContabil>.Ok(lanc);
@@ -138,6 +140,50 @@ public class ContabilidadeService : IContabilidadeService
         // Recebimento: D Bancos, C Receitas.
         await LancarAutomaticoAsync(PlanoContasPadrao.Bancos, PlanoContasPadrao.Receitas, valor,
             $"Recebimento da conta a receber #{contaReceberId}", $"Recebimento:{contaReceberId}", usuario);
+    }
+
+    public Task EstornarPagamentoAsync(int contaPagarId, string usuario) =>
+        EstornarAutomaticoAsync($"Pagamento:{contaPagarId}", usuario);
+
+    public Task EstornarRecebimentoAsync(int contaReceberId, string usuario) =>
+        EstornarAutomaticoAsync($"Recebimento:{contaReceberId}", usuario);
+
+    /// <summary>
+    /// Reverte os lançamentos automáticos de uma origem (ex.: "Pagamento:42") criando
+    /// lançamentos com as partidas invertidas. Idempotente: não estorna duas vezes.
+    /// </summary>
+    private async Task EstornarAutomaticoAsync(string origemOriginal, string usuario)
+    {
+        var origemEstorno = $"Estorno:{origemOriginal}";
+        if (await _db.Lancamentos.AnyAsync(l => l.Origem == origemEstorno))
+            return; // já estornado
+
+        var originais = await _db.Lancamentos.Include(l => l.Partidas)
+            .Where(l => l.Origem == origemOriginal).ToListAsync();
+        if (originais.Count == 0) return; // nada lançado (plano não seedado) → nada a reverter
+
+        foreach (var orig in originais)
+        {
+            var estorno = new LancamentoContabil
+            {
+                Data = DateTime.UtcNow.Date,
+                Historico = $"Estorno: {orig.Historico}",
+                Origem = origemEstorno,
+            };
+            foreach (var p in orig.Partidas)
+                estorno.Partidas.Add(new PartidaContabil
+                {
+                    ContaContabilId = p.ContaContabilId,
+                    Tipo = p.Tipo == TipoPartida.Debito ? TipoPartida.Credito : TipoPartida.Debito,
+                    Valor = p.Valor,
+                });
+            _db.Lancamentos.Add(estorno);
+        }
+
+        await _db.SaveChangesAsync();
+        await _auditoria.RegistrarAsync(AcaoAuditoria.Estorno, nameof(LancamentoContabil), 0,
+            valorNovo: $"Estorno contábil de {origemOriginal}", usuario: usuario);
+        await _db.SaveChangesAsync();
     }
 
     private async Task LancarAutomaticoAsync(string codDebito, string codCredito, decimal valor,

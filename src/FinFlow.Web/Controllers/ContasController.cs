@@ -183,7 +183,13 @@ public class ContasController : BaseController
     public async Task<IActionResult> Estornar(int id, string motivo)
     {
         var r = await _bank.EstornarAsync(id, motivo, UsuarioAtual);
-        if (r.Sucesso) Sucesso("Pagamento estornado."); else Erro(r.Erro!);
+        if (r.Sucesso)
+        {
+            // Integração contábil: reverte o lançamento do pagamento (C Despesa / D Bancos).
+            await _contabil.EstornarPagamentoAsync(id, UsuarioAtual);
+            Sucesso("Pagamento estornado.");
+        }
+        else Erro(r.Erro!);
         return RedirectToAction(nameof(Details), new { id });
     }
 
