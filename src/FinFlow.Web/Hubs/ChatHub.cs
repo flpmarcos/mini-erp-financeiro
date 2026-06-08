@@ -1,5 +1,7 @@
+using FinFlow.Data;
 using FinFlow.Domain.Enums;
 using FinFlow.Domain.Identity;
+using FinFlow.Infrastructure.Tenancy;
 using FinFlow.Services.Interfaces;
 using FinFlow.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -12,17 +14,35 @@ namespace FinFlow.Hubs;
 public class ChatHub : Hub
 {
     private readonly IChatService _chat;
-    public ChatHub(IChatService chat) => _chat = chat;
+    private readonly AppDbContext _db;
+
+    public ChatHub(IChatService chat, AppDbContext db)
+    {
+        _chat = chat;
+        _db = db;
+    }
 
     private string Usuario => Context.User?.Identity?.Name ?? "anon";
     private bool EhAuditor => Context.User?.IsInRole(Roles.Auditor) ?? false;
     private static string Grupo(int conversationId) => $"conv-{conversationId}";
+
+    /// <summary>
+    /// O TenantMiddleware não roda em invocações de hub (só no request HTTP). Aqui aplicamos
+    /// o tenant (empresa) no DbContext da chamada a partir do claim do usuário, garantindo
+    /// o isolamento multiempresa também no chat em tempo real.
+    /// </summary>
+    private void AplicarTenant()
+    {
+        if (int.TryParse(Context.User?.FindFirst(TenantClaims.EmpresaId)?.Value, out var empresaId))
+            _db.EmpresaIdFiltro = empresaId;
+    }
 
     public Task Entrar(int conversationId) => Groups.AddToGroupAsync(Context.ConnectionId, Grupo(conversationId));
     public Task Sair(int conversationId) => Groups.RemoveFromGroupAsync(Context.ConnectionId, Grupo(conversationId));
 
     public async Task Enviar(int conversationId, string texto)
     {
+        AplicarTenant();
         var r = await _chat.EnviarMensagemAsync(conversationId, Usuario, AreaEmpresa.Operacoes, texto, EhAuditor);
         if (!r.Sucesso)
         {
