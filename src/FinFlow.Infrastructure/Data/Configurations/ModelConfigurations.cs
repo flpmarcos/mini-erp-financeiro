@@ -253,6 +253,39 @@ public class ChatMentionConfig : IEntityTypeConfiguration<ChatMention>
     }
 }
 
+public class ContaContabilConfig : IEntityTypeConfiguration<ContaContabil>
+{
+    public void Configure(EntityTypeBuilder<ContaContabil> b)
+    {
+        b.ToTable("CONTAS_CONTABEIS");
+        b.HasIndex(x => new { x.EmpresaId, x.Codigo }).IsUnique();
+    }
+}
+
+public class LancamentoContabilConfig : IEntityTypeConfiguration<LancamentoContabil>
+{
+    public void Configure(EntityTypeBuilder<LancamentoContabil> b)
+    {
+        b.ToTable("LANCAMENTOS_CONTABEIS");
+        b.Ignore(x => x.TotalDebito);
+        b.Ignore(x => x.TotalCredito);
+        b.Ignore(x => x.Balanceado);
+        b.HasIndex(x => x.Data);
+    }
+}
+
+public class PartidaContabilConfig : IEntityTypeConfiguration<PartidaContabil>
+{
+    public void Configure(EntityTypeBuilder<PartidaContabil> b)
+    {
+        b.ToTable("PARTIDAS_CONTABEIS");
+        b.HasOne(x => x.Lancamento).WithMany(l => l.Partidas)
+            .HasForeignKey(x => x.LancamentoContabilId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne(x => x.Conta).WithMany()
+            .HasForeignKey(x => x.ContaContabilId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 public class AuditLogConfig : IEntityTypeConfiguration<AuditLog>
 {
     public void Configure(EntityTypeBuilder<AuditLog> b)

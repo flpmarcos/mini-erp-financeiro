@@ -101,6 +101,9 @@ builder.Services.AddScoped<INotificacaoService, NotificacaoService>();
 // Compras (Fase 8)
 builder.Services.AddScoped<ICompraService, CompraService>();
 
+// Contabilidade (plano de contas + lançamentos)
+builder.Services.AddScoped<IContabilidadeService, ContabilidadeService>();
+
 // Chat interno (Módulo 24)
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddSignalR();

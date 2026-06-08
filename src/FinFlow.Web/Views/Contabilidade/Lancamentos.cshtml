@@ -1,0 +1,37 @@
+@model List<LancamentoContabil>
+@{
+    ViewData["Title"] = "Lançamentos Contábeis";
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Lançamentos Contábeis</h2>
+    <div>
+        <a class="btn btn-outline-secondary" asp-action="PlanoContas">Plano de Contas</a>
+        <a class="btn btn-primary" asp-action="NovoLancamento">+ Novo Lançamento</a>
+    </div>
+</div>
+<p class="text-muted">Cada lançamento segue <strong>partida dobrada</strong>: total a débito = total a crédito.</p>
+
+@foreach (var l in Model)
+{
+    <div class="card mb-2"><div class="card-body py-2">
+        <div class="d-flex justify-content-between">
+            <div><strong>@l.Data.ToShortDateString()</strong> — @l.Historico <span class="badge bg-light text-dark">@l.Origem</span></div>
+            <div class="text-muted small">@Moeda(l.TotalDebito)</div>
+        </div>
+        <table class="table table-sm mb-0 mt-1">
+            <tbody>
+                @foreach (var p in l.Partidas.OrderByDescending(x => x.Tipo))
+                {
+                    <tr>
+                        <td style="width:60px">@(p.Tipo == FinFlow.Domain.Enums.TipoPartida.Debito ? "D" : "C")</td>
+                        <td>@p.Conta?.Codigo — @p.Conta?.Nome</td>
+                        <td class="text-end">@Moeda(p.Valor)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div></div>
+}
+@if (!Model.Any()) { <div class="text-muted text-center py-4">Nenhum lançamento. Pagamentos e recebimentos geram lançamentos automáticos.</div> }

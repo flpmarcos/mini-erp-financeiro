@@ -1,5 +1,29 @@
 namespace FinFlow.Domain.Enums;
 
+/// <summary>Classe da conta no plano de contas contábil.</summary>
+public enum TipoContaContabil
+{
+    Ativo = 1,
+    Passivo = 2,
+    PatrimonioLiquido = 3,
+    Receita = 4,
+    Despesa = 5
+}
+
+/// <summary>Natureza do saldo: contas devedoras aumentam a débito; credoras, a crédito.</summary>
+public enum NaturezaConta
+{
+    Devedora = 1,
+    Credora = 2
+}
+
+/// <summary>Lado da partida dobrada.</summary>
+public enum TipoPartida
+{
+    Debito = 1,
+    Credito = 2
+}
+
 /// <summary>Situacao cadastral do fornecedor. Fornecedor Bloqueado/Inativo nao recebe pagamento.</summary>
 public enum StatusFornecedor
 {

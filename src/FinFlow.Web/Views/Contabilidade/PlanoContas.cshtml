@@ -1,0 +1,46 @@
+@model List<ContaContabil>
+@{ ViewData["Title"] = "Plano de Contas"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Plano de Contas</h2>
+    <div>
+        <a class="btn btn-outline-secondary" asp-action="Lancamentos">Lançamentos</a>
+        <a class="btn btn-outline-secondary" asp-action="Balancete">Balancete</a>
+        <a class="btn btn-outline-secondary" asp-action="Dre">DRE</a>
+    </div>
+</div>
+<p class="text-muted">Contas <strong>analíticas</strong> recebem lançamento; <strong>sintéticas</strong> só agrupam.</p>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <table class="table table-sm bg-white align-middle">
+            <thead class="table-light"><tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Natureza</th><th>Tipo</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td><code>@c.Codigo</code></td>
+                        <td>@c.Nome</td>
+                        <td>@c.Tipo</td>
+                        <td>@c.Natureza</td>
+                        <td>@(c.Analitica ? "Analítica" : "Sintética")</td>
+                        <td>@if (c.Analitica) { <a class="btn btn-sm btn-link" asp-action="Razao" asp-route-id="@c.Id">Razão</a> }</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-4">
+        <div class="card"><div class="card-header">Nova conta</div><div class="card-body">
+            <form asp-action="CriarConta" method="post" class="row g-2">
+                @Html.AntiForgeryToken()
+                <div class="col-12"><input name="Codigo" class="form-control form-control-sm" placeholder="Código (ex.: 4.1.02)" /></div>
+                <div class="col-12"><input name="Nome" class="form-control form-control-sm" placeholder="Nome" /></div>
+                <div class="col-6"><select name="Tipo" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<FinFlow.Domain.Enums.TipoContaContabil>()"></select></div>
+                <div class="col-6"><select name="Natureza" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<FinFlow.Domain.Enums.NaturezaConta>()"></select></div>
+                <div class="col-12 form-check ms-2"><input name="Analitica" value="true" checked class="form-check-input" type="checkbox" /> <label class="form-check-label small">Analítica (recebe lançamento)</label></div>
+                <div class="col-12"><button class="btn btn-sm btn-primary w-100">Adicionar</button></div>
+            </form>
+        </div></div>
+    </div>
+</div>

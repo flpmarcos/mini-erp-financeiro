@@ -1,0 +1,38 @@
+@model LancamentoFormVM
+@{ ViewData["Title"] = "Novo Lançamento"; }
+
+<h2 class="mb-3">Novo Lançamento Contábil</h2>
+<p class="text-muted">Preencha as partidas. A soma dos <strong>débitos</strong> deve ser igual à dos <strong>créditos</strong>.</p>
+
+<form asp-action="NovoLancamento" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3 mb-2">
+        <div class="col-md-3">
+            <label asp-for="Data" class="form-label"></label>
+            <input asp-for="Data" class="form-control" type="date" />
+        </div>
+        <div class="col-md-9">
+            <label asp-for="Historico" class="form-label"></label>
+            <input asp-for="Historico" class="form-control" placeholder="ex.: Provisão de despesa de aluguel" />
+        </div>
+    </div>
+
+    <table class="table table-sm">
+        <thead class="table-light"><tr><th>Conta</th><th style="width:140px">Tipo</th><th style="width:160px">Valor</th></tr></thead>
+        <tbody>
+            @for (int i = 0; i < 6; i++)
+            {
+                <tr>
+                    <td><select name="Partidas[@i].ContaContabilId" class="form-select form-select-sm" asp-items="ViewBag.Contas"><option value="0">—</option></select></td>
+                    <td><select name="Partidas[@i].Tipo" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<FinFlow.Domain.Enums.TipoPartida>()"></select></td>
+                    <td><input name="Partidas[@i].Valor" class="form-control form-control-sm" type="number" step="0.01" value="0" /></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div><button class="btn btn-primary">Registrar lançamento</button> <a class="btn btn-link" asp-action="Lancamentos">Cancelar</a></div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

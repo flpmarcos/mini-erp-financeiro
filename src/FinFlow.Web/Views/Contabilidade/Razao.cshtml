@@ -1,0 +1,28 @@
+@model List<RazaoMovimento>
+@{
+    var conta = (FinFlow.Domain.Entities.ContaContabil)ViewBag.Conta;
+    ViewData["Title"] = "Razão " + conta.Codigo;
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between mb-3">
+    <h2>Razão — <code>@conta.Codigo</code> @conta.Nome</h2>
+    <a class="btn btn-outline-secondary" asp-action="PlanoContas">← Plano de Contas</a>
+</div>
+
+<table class="table table-sm bg-white align-middle">
+    <thead class="table-light"><tr><th>Data</th><th>Histórico</th><th class="text-end">Débito</th><th class="text-end">Crédito</th><th class="text-end">Saldo</th></tr></thead>
+    <tbody>
+        @foreach (var m in Model)
+        {
+            <tr>
+                <td>@m.Data.ToShortDateString()</td>
+                <td>@m.Historico</td>
+                <td class="text-end">@(m.Debito > 0 ? Moeda(m.Debito) : "")</td>
+                <td class="text-end">@(m.Credito > 0 ? Moeda(m.Credito) : "")</td>
+                <td class="text-end fw-bold">@Moeda(m.SaldoAcumulado)</td>
+            </tr>
+        }
+        @if (!Model.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">Conta sem movimento.</td></tr> }
+    </tbody>
+</table>

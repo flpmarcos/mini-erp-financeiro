@@ -30,6 +30,7 @@
 2. [Como funciona um ERP](#2-como-funciona-um-erp)
 3. [Módulos do FinFlow](#3-módulos-do-finflow)
 4. [Por que e quando usar um ERP](#4-por-que-e-quando-usar-um-erp)
+- 📚 [Entenda os conceitos: conciliação, plano de contas, partida dobrada](#-entenda-os-conceitos-em-português-claro)
 5. [Regras de negócio implementadas](#5-regras-de-negócio-implementadas)
 6. [Tecnologias](#6-tecnologias-utilizadas)
 7. [Pré-requisitos e instalação](#7-pré-requisitos-e-instalação)
@@ -126,6 +127,7 @@ Exemplo de processo (ciclo de compra):
 | **Contas a Pagar** | obrigações: 11 status, parcelamento, juros/multa, retenção de impostos, baixa |
 | **Contas a Receber** | faturas de clientes, recebimento total/parcial, inadimplência |
 | **Fluxo de Caixa** | consolida AP + AR + saldos; projeções 7/30/90 dias |
+| **Contabilidade** | Plano de Contas + Lançamento por partida dobrada (D=C), Balancete, Razão, DRE; **lança automático** a cada baixa/recebimento |
 | **Workflow de Aprovação** | alçadas configuráveis (valor/categoria/centro/fornecedor) |
 
 **Integrações**
@@ -133,7 +135,7 @@ Exemplo de processo (ciclo de compra):
 |---|---|
 | Integração bancária | PIX/TED/boleto (fake: BB/Itaú/Santander) + estorno + webhooks + retry |
 | CNAB | geração de remessa e processamento de retorno |
-| Conciliação bancária | importa extrato CSV e casa com pagamentos |
+| Conciliação bancária | importa extrato CSV e casa com **pagamentos (AP) e recebimentos (AR)**, automático ou manual |
 | Anexos | NF/boleto/contrato/comprovante (disco → pronto p/ S3) |
 | API REST + Swagger | `/api/v1/*` para integração externa |
 
@@ -159,6 +161,76 @@ Exemplo de processo (ciclo de compra):
 **Por que:** sem um ERP, cada área vive em planilhas/sistemas isolados → dado duplicado e inconsistente, retrabalho, pagamento em atraso ou duplicado, falta de visão de caixa, zero rastreabilidade. Um ERP **unifica o dado, automatiza os fluxos entre áreas e impõe governança** (aprovações, auditoria, permissões).
 
 **Quando:** empresas com vários fornecedores/clientes, que exigem aprovação antes de pagar, têm despesas recorrentes/parceladas, retêm impostos, querem integrar com bancos, precisam de relatórios confiáveis e de **isolar dados por empresa**.
+
+## 📚 Entenda os conceitos (em português claro)
+
+Três recursos do FinFlow costumam assustar pelo nome. Aqui vai o que cada um **é** e **por que existe**.
+
+### Conciliação bancária (AP e AR)
+
+**O que é:** conferir, linha a linha, se o que aconteceu na conta do banco bate com o que está registrado no sistema.
+
+**Por quê:** o sistema diz "paguei o fornecedor X" ou "recebi do cliente Y", mas a verdade está no **extrato do banco**. Conciliar é cruzar os dois e achar diferenças (pagamento que não saiu, taxa a mais, recebimento que não entrou).
+
+**Como funciona aqui:**
+1. Você importa o **extrato em CSV** (data, valor, descrição).
+2. O sistema tenta **casar automaticamente** cada linha:
+   - valor **negativo** → procura uma **Conta a Pagar (AP)** de mesmo valor e data próxima;
+   - valor **positivo** → procura uma **Conta a Receber (AR)**.
+3. O que não casou sozinho, você **concilia manualmente** informando o id da conta.
+
+> Analogia: é como conferir o cartão de crédito contra suas anotações no fim do mês. Cada compra anotada precisa achar a linha correspondente na fatura.
+
+### Plano de Contas
+
+**O que é:** a **lista padronizada de "gavetas"** onde todo dinheiro da empresa é classificado. Cada gaveta tem um **código** e um **tipo**.
+
+**Por quê:** sem padronização, "aluguel" hoje vira "locação" amanhã e ninguém soma nada direito. O plano dá um nome e um código únicos para cada coisa.
+
+**Os 5 tipos (e o seed que já vem pronto):**
+
+| Código | Conta | Tipo | Natureza |
+|---|---|---|---|
+| 1.1.01 | Caixa e Bancos | Ativo | Devedora |
+| 1.2.01 | Clientes a Receber | Ativo | Devedora |
+| 2.1.01 | Fornecedores a Pagar | Passivo | Credora |
+| 3.1.01 | Receita de Vendas/Serviços | Receita | Credora |
+| 4.1.01 | Despesas Operacionais | Despesa | Devedora |
+
+- **Ativo** = o que a empresa tem/vai receber (dinheiro, clientes).
+- **Passivo** = o que a empresa deve (fornecedores).
+- **Receita** = dinheiro que entra por vender.
+- **Despesa** = dinheiro que sai pra operar.
+- **Natureza** (Devedora/Credora) define de que lado o saldo cresce.
+
+### Lançamento Contábil (partida dobrada)
+
+**O que é:** o **registro oficial** de um fato financeiro. A regra de ouro (criada há ~500 anos): **todo lançamento tem pelo menos dois lados e a soma dos débitos é igual à soma dos créditos**. É a *partida dobrada*.
+
+**Por quê:** dinheiro não some nem aparece do nada — ele **sai de um lugar e entra em outro**. Registrar os dois lados garante que a contabilidade sempre "fecha" e torna fraude/erro fácil de pegar.
+
+**Exemplos automáticos do FinFlow:**
+
+Quando você dá **baixa em uma Conta a Pagar** de R$ 500:
+```
+D  4.1.01 Despesas Operacionais   500   (despesa aumentou)
+C  1.1.01 Caixa e Bancos          500   (dinheiro saiu)
+```
+
+Quando você **recebe** R$ 1.000 de um cliente:
+```
+D  1.1.01 Caixa e Bancos        1.000   (dinheiro entrou)
+C  3.1.01 Receita de Vendas     1.000   (receita aumentou)
+```
+
+> Débito (D) e Crédito (C) **não** são "bom" e "ruim" — são só os dois lados. Em Ativo, débito aumenta; em Receita/Passivo, crédito aumenta.
+
+**O que o sistema entrega a partir desses lançamentos:**
+- **Razão** — extrato de uma conta específica (toda movimentação + saldo).
+- **Balancete** — saldo de **todas** as contas; a soma de débitos tem que bater com a de créditos.
+- **DRE** — Demonstração de Resultado: **Receitas − Despesas = lucro/prejuízo** do período.
+
+No FinFlow esses lançamentos são gerados **sozinhos** a cada baixa/recebimento, mas você também pode lançar manualmente em **Contabilidade → Novo Lançamento** (o sistema **recusa** se débitos ≠ créditos).
 
 ## 5. Regras de negócio implementadas
 

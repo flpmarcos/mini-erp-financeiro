@@ -18,11 +18,12 @@ public class ContasController : BaseController
     private readonly ICadastroService _cadastros;
     private readonly IAnexoService _anexos;
     private readonly IBankIntegrationService _bank;
+    private readonly IContabilidadeService _contabil;
 
     public ContasController(IContaPagarService contas, IPagamentoService pagamento,
         IAprovacaoService aprovacao, IJurosMultaService juros,
         IFornecedorService fornecedores, ICadastroService cadastros, IAnexoService anexos,
-        IBankIntegrationService bank)
+        IBankIntegrationService bank, IContabilidadeService contabil)
     {
         _contas = contas;
         _pagamento = pagamento;
@@ -32,6 +33,7 @@ public class ContasController : BaseController
         _cadastros = cadastros;
         _anexos = anexos;
         _bank = bank;
+        _contabil = contabil;
     }
 
     // ---- Listagem com filtros + paginacao ----
@@ -189,7 +191,12 @@ public class ContasController : BaseController
     public async Task<IActionResult> Baixar(BaixaVM vm)
     {
         var r = await _pagamento.BaixarAsync(vm, UsuarioAtual);
-        if (r.Sucesso) Sucesso("Pagamento registrado com sucesso.");
+        if (r.Sucesso)
+        {
+            // Integração contábil: gera o lançamento automático (D Despesas / C Bancos).
+            await _contabil.LancarPagamentoAsync(vm.ContaPagarId, vm.ValorPago, UsuarioAtual);
+            Sucesso("Pagamento registrado com sucesso.");
+        }
         else Erro(r.Erro!);
         return RedirectToAction(nameof(Details), new { id = vm.ContaPagarId });
     }

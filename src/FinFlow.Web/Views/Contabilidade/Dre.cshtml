@@ -1,0 +1,19 @@
+@model DreResultado
+@{
+    ViewData["Title"] = "DRE";
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between mb-3">
+    <h2>DRE — Demonstração do Resultado</h2>
+    <a class="btn btn-outline-secondary" asp-action="PlanoContas">← Plano de Contas</a>
+</div>
+<p class="text-muted">Versão simplificada: <strong>Receitas − Despesas = Resultado</strong>.</p>
+
+<div class="row g-3" style="max-width:640px">
+    <div class="col-md-4"><div class="kpi kpi--success"><div class="kpi__label">Receitas</div><div class="kpi__value">@Moeda(Model.Receitas)</div></div></div>
+    <div class="col-md-4"><div class="kpi kpi--danger"><div class="kpi__label">Despesas</div><div class="kpi__value">@Moeda(Model.Despesas)</div></div></div>
+    <div class="col-md-4"><div class="kpi @(Model.Resultado >= 0 ? "kpi--primary" : "kpi--danger")"><div class="kpi__label">Resultado</div><div class="kpi__value">@Moeda(Model.Resultado)</div></div></div>
+</div>
+
+<p class="text-muted small mt-3">@(Model.Resultado >= 0 ? "Lucro no período." : "Prejuízo no período.")</p>

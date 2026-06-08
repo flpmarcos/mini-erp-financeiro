@@ -1,0 +1,36 @@
+@model List<BalanceteLinha>
+@{
+    ViewData["Title"] = "Balancete";
+    string Moeda(decimal v) => v.ToString("C", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="d-flex justify-content-between mb-3">
+    <h2>Balancete de Verificação</h2>
+    <a class="btn btn-outline-secondary" asp-action="PlanoContas">← Plano de Contas</a>
+</div>
+<p class="text-muted">Soma de débitos e créditos por conta. Os totais devem bater (partida dobrada).</p>
+
+<table class="table table-sm bg-white align-middle">
+    <thead class="table-light"><tr><th>Código</th><th>Conta</th><th>Tipo</th><th class="text-end">Débito</th><th class="text-end">Crédito</th><th class="text-end">Saldo</th></tr></thead>
+    <tbody>
+        @foreach (var l in Model)
+        {
+            <tr>
+                <td><code>@l.Codigo</code></td><td>@l.Nome</td><td>@l.Tipo</td>
+                <td class="text-end">@Moeda(l.Debito)</td>
+                <td class="text-end">@Moeda(l.Credito)</td>
+                <td class="text-end fw-bold">@Moeda(l.Saldo)</td>
+            </tr>
+        }
+        @if (!Model.Any()) { <tr><td colspan="6" class="text-center text-muted py-4">Sem movimento contábil ainda.</td></tr> }
+    </tbody>
+    @if (Model.Any())
+    {
+        <tfoot><tr class="table-light fw-bold">
+            <td colspan="3">Totais</td>
+            <td class="text-end">@Moeda(Model.Sum(l => l.Debito))</td>
+            <td class="text-end">@Moeda(Model.Sum(l => l.Credito))</td>
+            <td></td>
+        </tr></tfoot>
+    }
+</table>

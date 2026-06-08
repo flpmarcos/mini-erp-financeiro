@@ -13,12 +13,15 @@ public class ContasReceberController : BaseController
     private readonly IContaReceberService _contas;
     private readonly IClienteService _clientes;
     private readonly ICadastroService _cadastros;
+    private readonly IContabilidadeService _contabil;
 
-    public ContasReceberController(IContaReceberService contas, IClienteService clientes, ICadastroService cadastros)
+    public ContasReceberController(IContaReceberService contas, IClienteService clientes,
+        ICadastroService cadastros, IContabilidadeService contabil)
     {
         _contas = contas;
         _clientes = clientes;
         _cadastros = cadastros;
+        _contabil = contabil;
     }
 
     public async Task<IActionResult> Index([FromQuery] ContaReceberFiltroVM filtro)
@@ -70,7 +73,13 @@ public class ContasReceberController : BaseController
     public async Task<IActionResult> Receber(RecebimentoVM vm)
     {
         var r = await _contas.ReceberAsync(vm, UsuarioAtual);
-        if (r.Sucesso) Sucesso("Recebimento registrado."); else Erro(r.Erro!);
+        if (r.Sucesso)
+        {
+            // Integração contábil: lançamento automático (D Bancos / C Receitas).
+            await _contabil.LancarRecebimentoAsync(vm.ContaReceberId, vm.ValorRecebido, UsuarioAtual);
+            Sucesso("Recebimento registrado.");
+        }
+        else Erro(r.Erro!);
         return RedirectToAction(nameof(Details), new { id = vm.ContaReceberId });
     }
 

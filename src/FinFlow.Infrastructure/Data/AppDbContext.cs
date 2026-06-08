@@ -61,6 +61,11 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<ChatReadReceipt> ChatLeituras => Set<ChatReadReceipt>();
     public DbSet<ChatMention> ChatMencoes => Set<ChatMention>();
 
+    // Contabilidade (plano de contas + lançamentos)
+    public DbSet<ContaContabil> ContasContabeis => Set<ContaContabil>();
+    public DbSet<LancamentoContabil> Lancamentos => Set<LancamentoContabil>();
+    public DbSet<PartidaContabil> Partidas => Set<PartidaContabil>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -92,6 +97,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
         AplicarFiltroTenant<SolicitacaoCompra>(modelBuilder);
         AplicarFiltroTenant<ChatConversation>(modelBuilder);
         AplicarFiltroTenant<AuditLog>(modelBuilder);
+        AplicarFiltroTenant<ContaContabil>(modelBuilder);
+        AplicarFiltroTenant<LancamentoContabil>(modelBuilder);
     }
 
     private void AplicarFiltroTenant<T>(ModelBuilder mb, bool soByPropriaEmpresa = false) where T : class

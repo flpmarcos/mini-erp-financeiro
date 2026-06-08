@@ -264,6 +264,24 @@ public static class DataSeeder
         await db.SaveChangesAsync();
 
         await SeedChatAsync(db);
+        await SeedContabilAsync(db);
+    }
+
+    /// <summary>Plano de contas contábil básico (sintéticas + analíticas).</summary>
+    private static async Task SeedContabilAsync(AppDbContext db)
+    {
+        db.ContasContabeis.AddRange(
+            new ContaContabil { Codigo = "1", Nome = "Ativo", Tipo = TipoContaContabil.Ativo, Natureza = NaturezaConta.Devedora, Analitica = false },
+            new ContaContabil { Codigo = "2", Nome = "Passivo", Tipo = TipoContaContabil.Passivo, Natureza = NaturezaConta.Credora, Analitica = false },
+            new ContaContabil { Codigo = "3", Nome = "Receitas", Tipo = TipoContaContabil.Receita, Natureza = NaturezaConta.Credora, Analitica = false },
+            new ContaContabil { Codigo = "4", Nome = "Despesas", Tipo = TipoContaContabil.Despesa, Natureza = NaturezaConta.Devedora, Analitica = false },
+            new ContaContabil { Codigo = "1.1.01", Nome = "Caixa e Bancos", Tipo = TipoContaContabil.Ativo, Natureza = NaturezaConta.Devedora },
+            new ContaContabil { Codigo = "1.2.01", Nome = "Clientes a Receber", Tipo = TipoContaContabil.Ativo, Natureza = NaturezaConta.Devedora },
+            new ContaContabil { Codigo = "2.1.01", Nome = "Fornecedores a Pagar", Tipo = TipoContaContabil.Passivo, Natureza = NaturezaConta.Credora },
+            new ContaContabil { Codigo = "3.1.01", Nome = "Receita de Vendas/Serviços", Tipo = TipoContaContabil.Receita, Natureza = NaturezaConta.Credora },
+            new ContaContabil { Codigo = "4.1.01", Nome = "Despesas Operacionais", Tipo = TipoContaContabil.Despesa, Natureza = NaturezaConta.Devedora }
+        );
+        await db.SaveChangesAsync();
     }
 
     /// <summary>Conversas de exemplo do chat interno (Módulo 24).</summary>
