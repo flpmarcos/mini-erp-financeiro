@@ -201,6 +201,9 @@
             Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
             Chart.defaults.color = '#475569';
             Chart.defaults.plugins.legend.labels.boxWidth = 12;
+            // Padroniza tamanho: gráficos preenchem a .chart-box (altura fixa), sem crescer sem limite.
+            Chart.defaults.responsive = true;
+            Chart.defaults.maintainAspectRatio = false;
             window.CAP_COLORS = ['#4f46e5','#f59e0b','#0891b2','#059669','#dc2626','#7c3aed','#db2777','#475569'];
         }
     </script>

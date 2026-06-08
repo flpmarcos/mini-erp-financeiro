@@ -297,6 +297,18 @@ code { color: var(--c-primary-d); background: #eef2ff; padding: .1em .35em; bord
 
 .footer-note { color: var(--c-text-faint); font-size: .8rem; padding: 1.5rem 1.75rem; }
 
+/* ============================ Gráficos (tamanho padrão) ================= */
+/* Canvas do Chart.js preenche este box de altura fixa (maintainAspectRatio=false).
+   Evita gráficos gigantes (ex.: pizza ocupando a tela inteira). */
+.chart-box { position: relative; height: 300px; width: 100%; }
+.chart-box--sm   { height: 220px; }
+.chart-box--tall { height: 380px; }
+.chart-box > canvas { max-height: 100%; }
+
+@media (max-width: 575px) {
+  .chart-box, .chart-box--tall { height: 240px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
