@@ -99,6 +99,8 @@ public class ExtratoConfig : IEntityTypeConfiguration<ExtratoBancarioItem>
         b.ToTable("EXTRATO_BANCARIO");
         b.HasOne(x => x.ContaPagar).WithMany()
             .HasForeignKey(x => x.ContaPagarId).OnDelete(DeleteBehavior.SetNull);
+        b.HasOne(x => x.ContaReceber).WithMany()
+            .HasForeignKey(x => x.ContaReceberId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

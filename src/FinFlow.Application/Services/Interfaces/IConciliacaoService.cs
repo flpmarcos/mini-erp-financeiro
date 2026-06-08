@@ -12,6 +12,9 @@ public interface IConciliacaoService
 
     Task<List<ExtratoBancarioItem>> ListarAsync();
 
-    /// <summary>Concilia manualmente um lancamento do extrato com uma conta paga.</summary>
+    /// <summary>Concilia manualmente um lancamento do extrato com uma conta A PAGAR.</summary>
     Task<OperationResult> ConciliarManualAsync(int extratoItemId, int contaPagarId, string usuario);
+
+    /// <summary>Concilia manualmente um lancamento do extrato com uma conta A RECEBER.</summary>
+    Task<OperationResult> ConciliarReceberManualAsync(int extratoItemId, int contaReceberId, string usuario);
 }

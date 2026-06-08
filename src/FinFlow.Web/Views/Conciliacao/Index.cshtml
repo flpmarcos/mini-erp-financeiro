@@ -31,17 +31,27 @@
                 <td><span class="badge @UiHelpers.BadgeConciliacao(e.Status)">@e.Status</span></td>
                 <td>
                     @if (e.ContaPagarId.HasValue)
-                    { <a asp-controller="Contas" asp-action="Details" asp-route-id="@e.ContaPagarId">#@e.ContaPagarId</a> }
+                    { <a asp-controller="Contas" asp-action="Details" asp-route-id="@e.ContaPagarId">Pagar #@e.ContaPagarId</a> }
+                    else if (e.ContaReceberId.HasValue)
+                    { <a asp-controller="ContasReceber" asp-action="Details" asp-route-id="@e.ContaReceberId">Receber #@e.ContaReceberId</a> }
                 </td>
                 <td>
                     @if (e.Status != StatusConciliacao.Conciliado)
                     {
-                        <form asp-action="ConciliarManual" method="post" class="d-flex gap-1">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="extratoItemId" value="@e.Id" />
-                            <input type="number" name="contaPagarId" class="form-control form-control-sm" placeholder="ID conta" style="width:90px" />
-                            <button class="btn btn-sm btn-outline-success">Conciliar</button>
-                        </form>
+                        <div class="d-flex gap-1">
+                            <form asp-action="ConciliarManual" method="post" class="d-flex gap-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="extratoItemId" value="@e.Id" />
+                                <input type="number" name="contaPagarId" class="form-control form-control-sm" placeholder="AP id" style="width:80px" />
+                                <button class="btn btn-sm btn-outline-success" title="Conciliar com Conta a Pagar">AP</button>
+                            </form>
+                            <form asp-action="ConciliarReceber" method="post" class="d-flex gap-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="extratoItemId" value="@e.Id" />
+                                <input type="number" name="contaReceberId" class="form-control form-control-sm" placeholder="AR id" style="width:80px" />
+                                <button class="btn btn-sm btn-outline-primary" title="Conciliar com Conta a Receber">AR</button>
+                            </form>
+                        </div>
                     }
                 </td>
             </tr>

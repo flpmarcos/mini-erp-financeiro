@@ -49,9 +49,14 @@ public class ConciliacaoService : IConciliacaoService
 
         int importados = 0, conciliados = 0;
 
-        // Candidatas: contas pagas/parciais ainda nao totalmente conciliadas no extrato.
+        // Candidatas a SAÍDA: contas a pagar pagas/parciais.
         var contasPagas = await _db.ContasPagar
             .Where(c => c.Status == StatusConta.Paga || c.Status == StatusConta.ParcialmentePaga)
+            .ToListAsync();
+
+        // Candidatas a ENTRADA: contas a receber recebidas/parciais.
+        var contasRecebidas = await _db.ContasReceber
+            .Where(c => c.Status == StatusReceber.Recebida || c.Status == StatusReceber.ParcialmenteRecebida)
             .ToListAsync();
 
         foreach (var linha in linhas)
@@ -69,20 +74,39 @@ public class ConciliacaoService : IConciliacaoService
                 Status = StatusConciliacao.NaoConciliado
             };
 
-            // Match automatico: valor igual (tolerancia) e data proxima.
+            // Match automatico por valor (tolerância) + proximidade de data.
             var valorAbs = Math.Abs(valor);
-            var match = contasPagas.FirstOrDefault(c =>
+
+            // 1) tenta SAÍDA (conta a pagar)
+            var ap = contasPagas.FirstOrDefault(c =>
                 Math.Abs(c.ValorPago - valorAbs) <= ToleranciaValor &&
                 c.DataPagamento.HasValue &&
                 Math.Abs((c.DataPagamento.Value.Date - data.Date).Days) <= ToleranciaDias);
 
-            if (match is not null)
+            if (ap is not null)
             {
                 item.Status = StatusConciliacao.Conciliado;
-                item.ContaPagarId = match.Id;
+                item.ContaPagarId = ap.Id;
                 item.DataConciliacao = DateTime.UtcNow;
-                contasPagas.Remove(match); // evita conciliar 2x com a mesma conta
+                contasPagas.Remove(ap);
                 conciliados++;
+            }
+            else
+            {
+                // 2) senão, tenta ENTRADA (conta a receber)
+                var ar = contasRecebidas.FirstOrDefault(c =>
+                    Math.Abs(c.ValorRecebido - valorAbs) <= ToleranciaValor &&
+                    c.DataRecebimento.HasValue &&
+                    Math.Abs((c.DataRecebimento.Value.Date - data.Date).Days) <= ToleranciaDias);
+
+                if (ar is not null)
+                {
+                    item.Status = StatusConciliacao.Conciliado;
+                    item.ContaReceberId = ar.Id;
+                    item.DataConciliacao = DateTime.UtcNow;
+                    contasRecebidas.Remove(ar);
+                    conciliados++;
+                }
             }
 
             _db.ExtratoItens.Add(item);
@@ -99,6 +123,7 @@ public class ConciliacaoService : IConciliacaoService
     public async Task<List<ExtratoBancarioItem>> ListarAsync() =>
         await _db.ExtratoItens.AsNoTracking()
             .Include(e => e.ContaPagar)
+            .Include(e => e.ContaReceber)
             .OrderByDescending(e => e.Data)
             .ToListAsync();
 
@@ -112,10 +137,30 @@ public class ConciliacaoService : IConciliacaoService
 
         item.Status = StatusConciliacao.Conciliado;
         item.ContaPagarId = conta.Id;
+        item.ContaReceberId = null;
         item.DataConciliacao = DateTime.UtcNow;
 
         await _auditoria.RegistrarAsync(AcaoAuditoria.Conciliacao, nameof(ExtratoBancarioItem), item.Id,
-            valorNovo: $"Conciliado manualmente com conta {conta.Id}", usuario: usuario);
+            valorNovo: $"Conciliado manualmente com conta a pagar {conta.Id}", usuario: usuario);
+        await _db.SaveChangesAsync();
+        return OperationResult.Ok();
+    }
+
+    public async Task<OperationResult> ConciliarReceberManualAsync(int extratoItemId, int contaReceberId, string usuario)
+    {
+        var item = await _db.ExtratoItens.FindAsync(extratoItemId);
+        if (item is null) return OperationResult.Falha("Lancamento do extrato nao encontrado.");
+
+        var conta = await _db.ContasReceber.FindAsync(contaReceberId);
+        if (conta is null) return OperationResult.Falha("Conta a receber nao encontrada.");
+
+        item.Status = StatusConciliacao.Conciliado;
+        item.ContaReceberId = conta.Id;
+        item.ContaPagarId = null;
+        item.DataConciliacao = DateTime.UtcNow;
+
+        await _auditoria.RegistrarAsync(AcaoAuditoria.Conciliacao, nameof(ExtratoBancarioItem), item.Id,
+            valorNovo: $"Conciliado manualmente com conta a receber {conta.Id}", usuario: usuario);
         await _db.SaveChangesAsync();
         return OperationResult.Ok();
     }

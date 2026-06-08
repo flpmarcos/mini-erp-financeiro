@@ -28,7 +28,11 @@ public class ExtratoBancarioItem : BaseEntity
     public StatusConciliacao Status { get; set; } = StatusConciliacao.NaoConciliado;
     public DateTime? DataConciliacao { get; set; }
 
-    /// <summary>Conta a pagar conciliada com este lancamento (quando houver match).</summary>
+    /// <summary>Conta a pagar conciliada (saída de dinheiro / valor negativo no extrato).</summary>
     public int? ContaPagarId { get; set; }
     public ContaPagar? ContaPagar { get; set; }
+
+    /// <summary>Conta a receber conciliada (entrada de dinheiro / valor positivo no extrato).</summary>
+    public int? ContaReceberId { get; set; }
+    public ContaReceber? ContaReceber { get; set; }
 }

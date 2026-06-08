@@ -39,7 +39,15 @@ public class ConciliacaoController : BaseController
     public async Task<IActionResult> ConciliarManual(int extratoItemId, int contaPagarId)
     {
         var r = await _conciliacao.ConciliarManualAsync(extratoItemId, contaPagarId, UsuarioAtual);
-        if (r.Sucesso) Sucesso("Lancamento conciliado."); else Erro(r.Erro!);
+        if (r.Sucesso) Sucesso("Lançamento conciliado com conta a pagar."); else Erro(r.Erro!);
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = Policies.PodeCadastrar)]
+    public async Task<IActionResult> ConciliarReceber(int extratoItemId, int contaReceberId)
+    {
+        var r = await _conciliacao.ConciliarReceberManualAsync(extratoItemId, contaReceberId, UsuarioAtual);
+        if (r.Sucesso) Sucesso("Lançamento conciliado com conta a receber."); else Erro(r.Erro!);
         return RedirectToAction(nameof(Index));
     }
 }
